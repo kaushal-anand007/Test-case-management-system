@@ -1,18 +1,34 @@
 const Project = require('../Models/project');
 const mongoose =require('mongoose');
+const Log =require('../Models/log');
 
 async function postProject (req,res) {
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+   // let UserID = req.user.payload.userId;
+    
     try {
-        let { nameOfProject, handledBy, projectDescription, startDate, endDate, runLog, testCase} = req.body;
-        let projectObj = { nameOfProject, handledBy, projectDescription, startDate, endDate, runLog, testCase }
-        await Project.create( projectObj);
-        let result = {
-            status : 'success',
-            data : {
-                message : " Project has sucessfully created "
-            }
+        let { nameOfProject, handledBy, projectDescription, startDate, endDate} = req.body;
+        let projectObj = { nameOfProject, handledBy, projectDescription, startDate, endDate, date, time}
+        if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
+            res.json({ message : "Please fill all the fields!!!"});
+        }else{
+            Project.findOne({"nameOfProject" : nameOfProject}, async function(err,results){
+                if(err){ res.json({message : err})}
+                if(results){
+                    res.json({ message : "The project name already exists!!!!"});
+                }else{
+                    await Project.create( projectObj);
+                    let result = {
+                        status : 'success',
+                        data : {
+                            message : " Project has sucessfully created "
+                        }
+                    }
+                    res.status(200).json(result);
+                }
+            })
         }
-        res.status(200).json(result);
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -40,7 +56,7 @@ async function getProjectById (req,res) {
 
 async function updateProject (req,res) {
 
-    let { nameOfProject, handledBy, projectDescription, runLogCount, testCasePass, testCaseFailed, comment, imageOrAttactment, title, testDescriptions, attachment, status, assignedToId, assignedToName } = req.body; 
+    let { nameOfProject, handledBy, projectDescription, runLogCount, testCasePass, testCaseFailed, comment, imageOrAttactment, title, testDescriptions, attachment, status, assignedTo } = req.body; 
     
     try {
         //Getting _id from array inside the db.
@@ -85,11 +101,8 @@ async function updateProject (req,res) {
         if(status) {
             setQuery["testCase.$.status"] = status;
         }
-        if(assignedToId) {
-            setQuery["testCase.$.assignedToId"] = assignedToId;
-        }
-        if(assignedToName) {
-            setQuery["testCase.$.assignedToName"] = assignedToName;
+        if(assignedTo) {
+            setQuery["testCase.$.assignedTo"] = assignedToId;
         }
 
         let update = await Project.findOneAndUpdate(

@@ -7,7 +7,7 @@ const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 router.post('/add', verifyAccessTokenForUserId, ReportController.reportDetails);
 
 //Get report details.
-router.get('/get-all', verifyAccessTokenForUserId, ReportController.getReportDetails); 
+router.get('/list', verifyAccessTokenForUserId, ReportController.getReportDetails); 
 
 //Get report details by id.
 router.get('/get/:reportID', verifyAccessTokenForUserId, ReportController.getReportDetailsById);

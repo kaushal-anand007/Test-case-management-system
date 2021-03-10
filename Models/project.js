@@ -7,7 +7,9 @@ const projectSchema=new mongoose.Schema({
     },
 
     handledBy : {
-        type : String
+        _id : { type : String},
+        fName : { type : String},
+        lName : { type : String}
     },
 
     projectDescription : {
@@ -61,17 +63,13 @@ const projectSchema=new mongoose.Schema({
             type : String
         },
 
-        assignedToId : {
-            type : String
+        assignedTo : { _id : { type : String},
+            fName : { type : String},
+            lName : { type : String}
         },
-
-        assignedToName : {
-            type : String
-        }
-    }],
     
     date : {
-       type : Date
+       type : String
     },
 
     time : {

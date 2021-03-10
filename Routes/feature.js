@@ -7,7 +7,7 @@ const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 router.post('/add', verifyAccessTokenForUserId, FeatureController.postFeature);
 
 //Get feature.
-router.get('/get-all', verifyAccessTokenForUserId, FeatureController.getFeature);
+router.get('/list', verifyAccessTokenForUserId, FeatureController.getFeature);
 
 //Get feature by id.
 router.get('/get/:featureID', verifyAccessTokenForUserId, FeatureController.getFeatureById)

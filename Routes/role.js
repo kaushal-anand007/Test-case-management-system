@@ -7,7 +7,7 @@ const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 router.post('/add', verifyAccessTokenForUserId, RoleController.postRoleInfo);
 
 //Get role related info's.
-router.get('/get-all', verifyAccessTokenForUserId, RoleController.getRoleInfo);
+router.get('/list', verifyAccessTokenForUserId, RoleController.getRoleInfo);
 
 //Get role related info's by id.
 router.get('/get/:roleID', verifyAccessTokenForUserId, RoleController.getRoleInfoById);

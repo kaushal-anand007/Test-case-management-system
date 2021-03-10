@@ -1,35 +1,35 @@
 const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema({
-    tester_id : {
+    testerId : {
         type : String 
     },
 
-    project_name : {
+    projectName : {
         type : String
     },
 
-    expected_result : {
+    expectedResult : {
         type : String
     },
 
-    actual_result : {
+    actualResult : {
         type : String
     },
 
-    no_of_testCase_passed : {
+    noOfTestCasePassed : {
+        type : Number
+    },
+
+    noOfTestCaseFailed : {
+        type : Number
+    },
+
+    bugId : {
         type : String
     },
 
-    no_of_testCase_failed : {
-        type : String
-    },
-
-    bug_id : {
-        type : String
-    },
-
-    jira_link : {
+    jiraLink : {
         type : String
     },
 
@@ -37,7 +37,7 @@ const reportSchema = new mongoose.Schema({
         type : String
     },
 
-    bug_id_status : {
+    bugIdStatus : {
         type : String
     },
 

@@ -78,12 +78,15 @@ let grantAccess = function(action, resource) {
 async function registerUser (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
+    let action = "Added new user";
     let {fName,lName, email, password, role, status} =req.body;
-    let userId;
     
     try{
         let userObj = {fName, lName, email, password, role : role || 'User', date : date, status, time : time};
         let user = await User.create(userObj);
+        //Getting UserID.
+        let user_ID = user && user._id;
+        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: user_ID}); 
                     let result = {
                         status : "success",
                         data: {
@@ -108,16 +111,10 @@ async function getRegisteredUser (req,res) {
     }
 };
 
-//Adding filter.
-var filter = {
-    "status" : "Active",
-    "role" : "Admin"
-}
-
 //Get all registered user by id.
 async function getUserById (req,res) {
     try{
-        let uniqueUser = await User.findOne( filter, { _id : req.params.userID});
+        let uniqueUser = await User.findOne({ _id : req.params.userID});
         res.json(uniqueUser);
     }catch (err) {
         res.json({ message : err});
@@ -127,11 +124,17 @@ async function getUserById (req,res) {
 //Update user by id.
 async function updateUserById (req,res) {
     let user = req.body;
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let action = "Updated Users";
+    let UserID = req.user.payload.userID;
+
        try{
         let updateUser= await User.updateOne(
             {_id : req.params.userID},
             {$set : user}
         );
+        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
         res.json(updateUser);
     }catch (err) {
         res.json({ message : err });
@@ -140,8 +143,13 @@ async function updateUserById (req,res) {
 
 //Remove user by id.
 async function removeUserById (req,res) {
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let action = "Deleted Users";
+    let UserID = req.user.payload.userID;
     try{
         let removeUser = await User.remove({_id: req.params.userID});
+        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
         res.json(removeUser);
     }catch (err) {
         console.log(err);
@@ -276,7 +284,12 @@ async function dashboad (req,res) {
 //Adding update password
 async function updatePassword (req, res){
     let { Password, newPassword } = req.body;
-    let UserID = req.user.payload.userID;
+    let userID = req.user.payload.userID;
+
+      //Current date and time.
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let action = "Password changed";
 
     try {
             let users = await User.findOne({_id : UserID});
@@ -289,6 +302,7 @@ async function updatePassword (req, res){
 
                     //Updating new password.
                     await users.updateOne({ password : newPassword});
+                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: userID}); 
 
                     res.status(200).json({ message : "Sucessfully Changed the password"}); 
                 }else{
