@@ -4,6 +4,10 @@ const { isEmail }=require('validator');
 
 //Schema for User.
 const userSchema=new mongoose.Schema({
+    userCode : {
+        type : String
+    },
+
     fName: {  
              type : String, 
     },
@@ -45,8 +49,7 @@ const userSchema=new mongoose.Schema({
     time : {
         type :String 
     }
- },{timestamps : true}
- );
+ });
 
 //Adding hashing and salting in middleware(for password).
 userSchema.pre('save', async function (next){

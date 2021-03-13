@@ -26,22 +26,22 @@ const projectSchema=new mongoose.Schema({
 
     runLog : [{
         runLogCount : {
-            type : Number
+            type : String
         },
 
         testCasePassed : {
-            type : Number
+            type : String
         },
 
         testCaseFailed : {
-            type : Number
+            type : String
         },
 
         comment : {
             type : String
         },
 
-        imageOrAttactment : {
+        imageOrAttachment : {
             type: String
         }
     }],
@@ -67,6 +67,7 @@ const projectSchema=new mongoose.Schema({
             fName : { type : String},
             lName : { type : String}
         },
+    }],
     
     date : {
        type : String

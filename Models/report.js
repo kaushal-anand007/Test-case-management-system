@@ -1,12 +1,17 @@
 const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema({
+    reportCode : {
+        type : String 
+    },
+
     testerId : {
         type : String 
     },
 
     projectName : {
-        type : String
+        _id : { type : String},
+        nameOfProject : { type : String}
     },
 
     expectedResult : {
@@ -18,11 +23,11 @@ const reportSchema = new mongoose.Schema({
     },
 
     noOfTestCasePassed : {
-        type : Number
+        type : String
     },
 
     noOfTestCaseFailed : {
-        type : Number
+        type : String
     },
 
     bugId : {

@@ -3,6 +3,7 @@ const RoleCounter = require('../Models/counter');
 const { json } = require('body-parser');
 const Log =require('../Models/log');
 
+//Function to auto increment the featurecode.
 async function getNextSequenceValue(sequenceName){
     try {
         let sequenceDocument = await RoleCounter.findOneAndUpdate({"role" : sequenceName},{
@@ -11,12 +12,13 @@ async function getNextSequenceValue(sequenceName){
             
          },{upsert: true, returnNewDocument:true});
          console.log(sequenceDocument);
-         return sequenceDocument ?  sequenceDocument.sequenceValue: 1;
+         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1: 1;
     } catch (error) {
         console.log(error);
     }
  }
 
+//Function to post the feature details.
 async function postFeature (req,res){
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
@@ -46,7 +48,7 @@ async function postFeature (req,res){
                         res.status(200).json(result);
 
                     }
-                })  
+                });  
             }  
         }).catch(error => {
             res.status(400).json( { message : error });
@@ -59,12 +61,10 @@ async function postFeature (req,res){
     }
 }
 
+//Function to get list of feature details.
 async function getFeature (req,res) {
-    let filter = (req.query.filter)?JSON.parse(req.query.filter):{}
-    
-
     try {
-        let feature = await Feature.find(filter);
+        let feature = await Feature.find();
         res.status(200).json(feature);
     } catch (error) {
         console.log(error);
@@ -73,15 +73,18 @@ async function getFeature (req,res) {
 
 }
 
+//Function to get feature details by id.
 async function getFeatureById (req,res) {
     try {
         let featureById = await Feature.findOne({ _id : req.params.featureID});
         res.status(200).json(featureById);
     } catch (error) {
+        console.log(error)
         res.status(400).json({ message : error });
     }
 }
 
+//Function to update feature details.
 async function updateFeature (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
@@ -94,12 +97,14 @@ async function updateFeature (req,res) {
             {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : modifiedBy, modifiedOn : date} }
         );
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
-        res.status(200).json(featureUpdate);
+        res.status(200).json({message : "Successfully updated feature"});
     } catch (error) {
+        console.log(error)
         console.log(400).json({ message : error });
     }
 }
 
+//Function to delete the feature details.
 async function deleteFeature (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
@@ -108,7 +113,7 @@ async function deleteFeature (req,res) {
     try {
         let featureDelete = await Feature.remove({ _id : req.params.featureID });
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
-        res.status(200).json(featureDelete);
+        res.status(200).json({message : "Successfully deleted feature"});
     } catch (error) {
         console.log(400).json({ message : error });
     }

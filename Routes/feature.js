@@ -16,6 +16,6 @@ router.get('/get/:featureID', verifyAccessTokenForUserId, FeatureController.getF
 router.put('/update/:featureID', verifyAccessTokenForUserId, FeatureController.updateFeature);
 
 //Delete traceability.
-router.delete('/remove:featureID', verifyAccessTokenForUserId, FeatureController.deleteFeature);
+router.delete('/remove/:featureID', verifyAccessTokenForUserId, FeatureController.deleteFeature);
 
 module.exports =router;

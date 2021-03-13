@@ -8,9 +8,9 @@ const roleSchema = new mongoose.Schema({
     roleName : {
         type : String
     },
-
-    featureList : [{
-       type : String
+    
+    featureList : [{ 
+        type : String
     }],
 
     createdBy : {

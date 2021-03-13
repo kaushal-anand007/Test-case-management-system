@@ -17,7 +17,7 @@ router.post('/add-user', verifyAccessTokenForUserId, UserController.grantAccess(
 router.get('/dashboard', verifyAccessTokenForUserId, UserController.dashboad);
 
 //Get log by Id
-router.get('/log/:logID', verifyAccessTokenForUserId, UserController.logDetails);
+router.get('/log/:userID', verifyAccessTokenForUserId, UserController.logDetails);
 
 //Get All logs
 router.get('/logs', verifyAccessTokenForUserId, UserController.grantAccess('readAny', 'profile'), UserController.logAllDetails);
@@ -31,10 +31,16 @@ router.get('/list', verifyAccessTokenForUserId, UserController.grantAccess('read
 //Getting specific user.
 router.get('/get/:userID', verifyAccessTokenForUserId, UserController.getUserById);
 
-//updating user.
+//Updating user.
 router.put('/update/:userID', verifyAccessTokenForUserId, UserController.grantAccess('updateAny', 'profile'), UserController.updateUserById);
 
-//deleting specific post.
+//Update user to make it Block.
+router.put('/block/:userID', verifyAccessTokenForUserId, UserController.grantAccess('updateAny', 'profile'), UserController.updateStatusBlock);
+
+//Update user to make it Active.
+router.put('/unblock/:userID', verifyAccessTokenForUserId, UserController.grantAccess('updateAny', 'profile'), UserController.updateStatusActive);
+
+//Deleting specific post.
 router.delete('/remove/:userID', verifyAccessTokenForUserId, UserController.grantAccess('deleteAny', 'profile'), UserController.removeUserById);
 
 module.exports =router;

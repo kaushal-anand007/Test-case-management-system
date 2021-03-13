@@ -7,6 +7,7 @@ const Log =require('../Models/log');
 const Report = require('../Models/report');
 const Project = require('../Models/project');
 const moment = require('moment');
+const RoleCounter = require('../Models/counter');
 
 //using moment to fetch date related info.
 moment().format();
@@ -15,36 +16,6 @@ require('dotenv').config();
 
 //Secret key.
 const secretKey=process.env.SECRET_KET;
-
-//handling registration errors.
-let handleErrors = (err) => {
-    console.log(err.message, err.code);
-    let errors = {email : '', password : ''};
-    
-    //incorrect email
-    if(err.message === 'Incorrect Email'){
-        errors.email = "That Email is not registered";
-    }
-
-    //incorrect password
-    if(err.message === 'Incorrect Password'){
-        errors.password = "That Password is not registered";
-        return errors;
-    }
-
-    //duplicate error code
-    if(err.code ===11000){
-        errors.email ='that email is already registered';
-    }
-
-    //validate errors
-    if(err.message.includes('user validation failed')){
-        Object.values(err.errors).forEach(({properties}) => {
-            errors[properties.path] = properties.message;
-        });
-    }
-    return errors;
-}
 
 //Creating Token for jwt.
 const createToken = (user) => {
@@ -74,27 +45,58 @@ let grantAccess = function(action, resource) {
     }
 }
 
-//Generating registration.
+//Function to auto increment the user code.
+async function getNextSequenceValue(sequenceName){
+    try {
+        let sequenceDocument = await RoleCounter.findOneAndUpdate({"role" : sequenceName},{
+            $set : { role : sequenceName},
+            $inc : { sequenceValue: 1 }
+            
+         },{returnNewDocument:true, upsert: true});
+         console.log(sequenceDocument);
+         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1: 1;
+    } catch (error) {
+        console.log(error);
+    }
+  
+ }
+
+
+//Adding Users
 async function registerUser (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Added new user";
-    let {fName,lName, email, password, role, status} =req.body;
-    
+    let {fName, lName, email, password, role, status} =req.body;
+    let userCode;
     try{
-        let userObj = {fName, lName, email, password, role : role || 'User', date : date, status, time : time};
-        let user = await User.create(userObj);
-        //Getting UserID.
-        let user_ID = user && user._id;
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: user_ID}); 
+     let userObj ={userCode, fName, lName, email, password, role, status, "date" : date, "time" : time };
+     if(fName == "" || lName == "" || email == "" || password == ""){
+         res.json({ message : "Please fill all the fields!!"})
+     }else{
+         User.findOne({"email" : email}, async function(err,results){
+             if(err){ res.json({ message : err})};
+             if(results){
+                 res.json({ message : "The email provided already exists!!!"});
+             }else{
+                getNextSequenceValue("userCode").then(async data=>{
+                let usercode = 'U'+ data;    
+                userObj.userCode = usercode;   
+                let user = await User.create(userObj);
                     let result = {
                         status : "success",
-                        data: {
-                            message : "Registration is sucessfull",
-                            userId : user._id
-                        }
+                        data : "User sucessfully Added!!"
                     }
-        res.status(200).json(result);
+                    let userID = user && user._id;
+                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID});
+                    res.status(200).json(result);
+                }).catch(error => {
+                    console.log(error);
+                    res.status(400).json( { message : error });
+               });    
+             }
+         });
+    }              
     }catch (err){
         console.log(err);
         const errors = handleErrors(err);
@@ -107,6 +109,7 @@ async function getRegisteredUser (req,res) {
     try{
         res.json(res.paginationResults);
     }catch (err) {
+        console.log(err);
         res.json({ message : err});
     }
 };
@@ -117,17 +120,58 @@ async function getUserById (req,res) {
         let uniqueUser = await User.findOne({ _id : req.params.userID});
         res.json(uniqueUser);
     }catch (err) {
+        console.log(err);
         res.json({ message : err});
     }
 };
+
+//Update user status blocked.
+async function updateStatusBlock (req,res) {
+    let { status } = req.body;
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let UserID = req.user.payload.userId;
+    let action = "User has been Blocked!!!";
+    
+    try {
+        let updatestatus = await User.updateOne(
+            {_id : req.params.userID},
+            {$set : {"status" : status}});
+            res.json({ message : "User sucessfully blocked!!!"});
+        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});     
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//Update user status Active.
+async function updateStatusActive (req,res) {
+    let { status } = req.body;
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let UserID = req.user.payload.userId;
+    let action = "User Active!!!";
+
+    try {
+        let updatestatus = await User.updateOne(
+            {_id : req.params.userID},
+            {$set : {"status" : status}});
+            res.json({ message : "User sucessfully unblocked!!!"});
+        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});     
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
 
 //Update user by id.
 async function updateUserById (req,res) {
     let user = req.body;
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let action = "Updated Users";
-    let UserID = req.user.payload.userID;
+    let action = "Updated user";
+    let UserID = req.user.payload.userId;
 
        try{
         let updateUser= await User.updateOne(
@@ -135,8 +179,9 @@ async function updateUserById (req,res) {
             {$set : user}
         );
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
-        res.json(updateUser);
+        res.json({ message : "Updated user!!!"});
     }catch (err) {
+        console.log(err);
         res.json({ message : err });
     }
 };
@@ -145,12 +190,12 @@ async function updateUserById (req,res) {
 async function removeUserById (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let action = "Deleted Users";
-    let UserID = req.user.payload.userID;
+    let action = "Deleted user";
+    let UserID = req.user.payload.userId;
     try{
         let removeUser = await User.remove({_id: req.params.userID});
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
-        res.json(removeUser);
+        res.json({ message : "Deleted user!!!"});
     }catch (err) {
         console.log(err);
         res.json({ message : err});
@@ -165,13 +210,14 @@ async function logout (req,res) {
     let time = new Date().toLocaleTimeString();
 
     let action = "Logout";
-    const UserID = req.user.payload.userID;
+    const UserID = req.user.payload.userId;
     try {
         let logs = await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: UserID});  
 
         console.log("logs --- > ",logs);
         res.status(200).json({ message : "Logout Sucessfull"});
     } catch (error) {
+        console.log(error);
         res.status(400).json({ message : "Logout failed.."});
     }
  
@@ -180,9 +226,10 @@ async function logout (req,res) {
 //Get log details by it. 
 async function logDetails (req,res) {
     try {
-        let logDetails = await Log.find({ UserID : req.params.logID});
+        let logDetails = await Log.find({ _id : req.params.userID});
         res.status(200).json(logDetails);
     } catch (error) {
+        console.log(error);
         res.status(400).json({ message : "The given log details are not available."});
     }
 }
@@ -195,6 +242,7 @@ async function logAllDetails (req,res) {
         let logDetails = await Log.find().sort({_id : -1});
         res.status(200).json(logDetails);
     } catch (error) {
+        console.log(error);
         res.status(400).json({ message : "request cannot be completed"});
     }
 }
@@ -220,8 +268,6 @@ async function login (req,res) {
 
         //Getting UserID.
         let user_ID = user && user._id;
-          
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: user_ID});    
             if(user){
                 //Password Authentication.
                 let auth = await bcrypt.compare(password, user.password);
@@ -239,6 +285,7 @@ async function login (req,res) {
                             userStatus : user.status
                         } 
                     }
+                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: user_ID}); 
                     res.status(200).json(result);
                 }else {
                     res.status(400).json({ message : "Password incorrect"});
@@ -258,19 +305,20 @@ async function dashboad (req,res) {
  try {
      let obj = {};
      //Test cases done yesterday. 
-     let totalTestCasesDoneYesterday = await Project.find({ "endDate" : moment().add(-1)} );
-     //Test cases done today. 
-     let totalTestCasesDoingToday = await Project.find( {"endDate": moment()} );
+     let pendingProjectYesterday = await Project.find({ "endDate" : moment().add(-1,'days').format("YYYY/MM/DD")});
+     console.log(moment().add(-1,'days').format("YYYY/MM/DD"));
+     //Test cases doning or done today. 
+     let projectToBeDoneToday = await Project.find( {"endDate": moment().format("YYYY/MM/DD")} );
      //Test cases doing tommorow. 
-     let totalTestCasesDoingTommorow = await Project.find( {"endDate" : moment().add(1)} );
+     let projectToBeDoneTommorow = await Project.find( {"endDate" : moment().add(1,'days').format("YYYY/MM/DD")} );
      //Recent added 10 projects generated.
      let recentAdded10Project = await Project.find().sort({_id : -1}).limit(10);
      //Recent 10 user activities.
      let allProjectReport = await Report.find().sort({_id : -1});
 
-     obj['totalTestCasesDoneYesterday'] = totalTestCasesDoneYesterday;
-     obj['totalTestCasesDoingToday'] = totalTestCasesDoingToday;
-     obj['totalTestCasesDoingTommorow'] = totalTestCasesDoingTommorow;
+     obj['pendingProjectYesterday'] = pendingProjectYesterday;
+     obj['projectToBeDoneToday'] = projectToBeDoneToday;
+     obj['projectToBeDoneTommorow'] = projectToBeDoneTommorow;
      obj['recentAdded10Project'] = recentAdded10Project;
      obj['allProjectReport'] = allProjectReport;
 
@@ -284,16 +332,18 @@ async function dashboad (req,res) {
 //Adding update password
 async function updatePassword (req, res){
     let { Password, newPassword } = req.body;
-    let userID = req.user.payload.userID;
+    let userID = req.user.payload.userId;
 
-      //Current date and time.
+    //Current date and time.
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let action = "Password changed";
+    let action = "Password updated";
 
     try {
-            let users = await User.findOne({_id : UserID});
+            let users = await User.findOne({_id : userID});
+            console.log("users  ---- > ", users)
             let auth = await bcrypt.compare(Password, users.password);
+            console.log("auth  --- > ",auth);
             if(auth){
                 if( Password != newPassword){
                     //Salting and Hashing password.
@@ -306,13 +356,14 @@ async function updatePassword (req, res){
 
                     res.status(200).json({ message : "Sucessfully Changed the password"}); 
                 }else{
-                    res.status(400).json({ message : "Please enter another password your new password matched with old one"});
+                    res.status(400).json({ message : "Please enter another password"});
                 }    
             }else{
                 res.status(400).json({ message : "Password do not matched"});
             }  
         } catch (error) {
-            res.status(400).json({ message : "Please enter valid UserID"});
+            console.log(error);
+            res.status(400).json({ message : "Please enter valid password!!"});
     }
 }
 
@@ -320,6 +371,8 @@ module.exports = {
     registerUser : registerUser,
     getRegisteredUser : getRegisteredUser,
     getUserById : getUserById,  
+    updateStatusBlock : updateStatusBlock,
+    updateStatusActive : updateStatusActive,
     updateUserById : updateUserById,
     removeUserById : removeUserById,
     login : login,
