@@ -52,6 +52,22 @@ async function getProject (req,res) {
    }
 }
 
+//Function to filted list.
+async function getFilterdProject (req, res) {
+    let filter = {
+        "startDate" : req.body.startDate,
+        "endDate" : req.body.endDate
+    };
+
+    try{
+        let filteredProject = await Project.find(filter);
+        res.json(filteredProject);
+    }catch (err) {
+        console.log(err);
+        res.json({ message : err});
+    }
+}
+
 //Function to get project by id.
 async function getProjectById (req,res) {
     try {
@@ -185,6 +201,7 @@ async function deleteProject (req,res) {
 module.exports = {
     postProject : postProject,
     getProject : getProject,
+    getFilterdProject : getFilterdProject,
     getProjectById : getProjectById,
     updateProject : updateProject,
     updateRunLog : updateRunLog,

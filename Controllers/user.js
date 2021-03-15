@@ -8,11 +8,13 @@ const Report = require('../Models/report');
 const Project = require('../Models/project');
 const moment = require('moment');
 const RoleCounter = require('../Models/counter');
+const nodemailer = require('nodemailer');
+
+//Importig .env here.
+require('dotenv').config();
 
 //using moment to fetch date related info.
 moment().format();
-
-require('dotenv').config();
 
 //Secret key.
 const secretKey=process.env.SECRET_KET;
@@ -58,19 +60,17 @@ async function getNextSequenceValue(sequenceName){
     } catch (error) {
         console.log(error);
     }
-  
  }
-
 
 //Adding Users
 async function registerUser (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Added new user";
-    let {fName, lName, email, password, role, status} =req.body;
+    let {fName, lName, email, password, role, status, filename, path} =req.body;
     let userCode;
     try{
-     let userObj ={userCode, fName, lName, email, password, role, status, "date" : date, "time" : time };
+     let userObj ={userCode, fName, lName, email, password, role, status, "date" : date, "time" : time, filename, path };
      if(fName == "" || lName == "" || email == "" || password == ""){
          res.json({ message : "Please fill all the fields!!"})
      }else{
@@ -87,8 +87,43 @@ async function registerUser (req,res) {
                         status : "success",
                         data : "User sucessfully Added!!"
                     }
+
+                    //using nodemailer.
+                    let transporter =nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: 'kaushal.storeking@gmail.com',
+                            pass: 'storeking'
+                        }
+                    });
+
+                    let filename = req.body.filename;
+                    let path = req.body.path;
+
+                    let mailOptions = {
+                        from: 'kaushal.storeking@gmail.com',
+                        to: 'hereiskaushal@gmail.com',
+                        subject: 'login credientials for your text case management web application.',
+                        text: `Your credientials are email: ${req.body.email}, password: ${req.body.password}`
+                    };
+
+                    if (!req.body.filename == '' && !req.body.path == '') {
+                        mailOptions['attachments'] = [
+                            { filename : req.body.filename, path : req.body.path}
+                        ]
+                    }
+
+                    transporter.sendMail(mailOptions, function(err, data){
+                        if (err) {
+                            console.log("Error occurs while sending the email.",err);
+                        } else {
+                            console.log('Email send successfully!!!');
+                        }
+                    });
+
                     let userID = user && user._id;
                     await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID});
+
                     res.status(200).json(result);
                 }).catch(error => {
                     console.log(error);
@@ -104,7 +139,7 @@ async function registerUser (req,res) {
     }
 };
 
-//Get all registered user details.
+//Get all user details.
 async function getRegisteredUser (req,res) {
     try{
         res.json(res.paginationResults);
@@ -113,6 +148,24 @@ async function getRegisteredUser (req,res) {
         res.json({ message : err});
     }
 };
+
+//Get all filtered user details.
+async function getFilterdUser (req,res) {
+
+    let filter = {
+        "role" : req.body.role,
+        "status" : req.body.status,
+        "date" : req.body.date
+    };
+
+    try{
+        let filteredUser = await User.find(filter);
+        res.json(filteredUser);
+    }catch (err) {
+        console.log(err);
+        res.json({ message : err});
+    }
+}
 
 //Get all registered user by id.
 async function getUserById (req,res) {
@@ -306,7 +359,6 @@ async function dashboad (req,res) {
      let obj = {};
      //Test cases done yesterday. 
      let pendingProjectYesterday = await Project.find({ "endDate" : moment().add(-1,'days').format("YYYY/MM/DD")});
-     console.log(moment().add(-1,'days').format("YYYY/MM/DD"));
      //Test cases doning or done today. 
      let projectToBeDoneToday = await Project.find( {"endDate": moment().format("YYYY/MM/DD")} );
      //Test cases doing tommorow. 
@@ -370,6 +422,7 @@ async function updatePassword (req, res){
 module.exports = {
     registerUser : registerUser,
     getRegisteredUser : getRegisteredUser,
+    getFilterdUser : getFilterdUser,
     getUserById : getUserById,  
     updateStatusBlock : updateStatusBlock,
     updateStatusActive : updateStatusActive,

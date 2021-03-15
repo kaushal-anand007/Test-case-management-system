@@ -48,6 +48,14 @@ const userSchema=new mongoose.Schema({
 
     time : {
         type :String 
+    },
+
+    filename : {
+        type : String
+    },
+
+    path : {
+        type : String
     }
  });
 

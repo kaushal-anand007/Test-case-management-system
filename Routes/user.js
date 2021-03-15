@@ -13,7 +13,7 @@ router.get('/logout', verifyAccessTokenForUserId, UserController.logout);
 //Submiting a user.
 router.post('/add-user', verifyAccessTokenForUserId, UserController.grantAccess('createAny', 'profile'), UserController.registerUser);
 
-//Getting dashboad
+//Get dashboad
 router.get('/dashboard', verifyAccessTokenForUserId, UserController.dashboad);
 
 //Get log by Id
@@ -25,8 +25,11 @@ router.get('/logs', verifyAccessTokenForUserId, UserController.grantAccess('read
 //Change password
 router.post('/change-password', verifyAccessTokenForUserId, UserController.updatePassword);
 
-//Getting all registered user.
+//Get all registered user.
 router.get('/list', verifyAccessTokenForUserId, UserController.grantAccess('readAny', 'profile'), paginationResults(User), UserController.getRegisteredUser);
+
+//Get filtered data.
+router.get('/filtered-list', verifyAccessTokenForUserId, UserController.grantAccess('readAny', 'profile'), UserController.getFilterdUser);
 
 //Getting specific user.
 router.get('/get/:userID', verifyAccessTokenForUserId, UserController.getUserById);

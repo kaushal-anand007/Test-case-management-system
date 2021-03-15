@@ -12,6 +12,9 @@ router.post('/add', verifyAccessTokenForUserId, ProjectController.postProject);
 //Get project details.
 router.get('/list', verifyAccessTokenForUserId, paginationResults(Project), ProjectController.getProject);
 
+//Get filtered data.
+router.get('/filtered-list', ProjectController.getFilterdProject);
+
 //get project by details id.
 router.get('/get/:projectID', verifyAccessTokenForUserId, ProjectController.getProjectById);
 
