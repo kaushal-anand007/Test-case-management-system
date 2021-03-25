@@ -30,12 +30,12 @@ async function postFeature (req,res){
         getNextSequenceValue("featureCode").then(data=>{
             let featurecode = 'F'+ data;
             let featureObj = {  featureCode: featurecode, featureName, createdBy, createdOn : date, moduleName};
-            if( featureName == "" || createdBy == "" || moduleName == ""){
+            if( featureName == "" || createdBy == "" || moduleName == null){
                 return res.json({ message : "Please fill all the fields!!!"})
             }else{
-                Feature.findOne({"featureName" : featureName}, async function(err, result){
+                Feature.findOne({"featureName" : featureName, "moduleName" : moduleName}, async function(err, result){
                     if(err) { res.json({ message : err})}
-                    if(result) {res.json({ message : "The feature name provided already exists!!!" })}
+                    if(result) {res.json({ message : "Duplicate feature and module!!" })}
                     else{
                        let data = await Feature.create(featureObj);
                        let result ={
@@ -44,17 +44,14 @@ async function postFeature (req,res){
                                 message : "Feature created sucessfully!!"
                             }
                         }
-                        let responseResult = await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+                        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
                         res.status(200).json(result);
-
-                    }
-                });  
-            }  
-        }).catch(error => {
+                        }
+                    });  
+                }  
+            }).catch(error => {
             res.status(400).json( { message : error });
-        })
-        
-        
+        });
     } catch (error) {
         console.log(error);
         res.status(400).json({ message :  error }); 
@@ -92,7 +89,7 @@ async function updateFeature (req,res) {
     let UserID = req.user.payload.userID;  
     let { featureName, moduleName, modifiedBy} = req.body;
     try {
-        let featureUpdate = await Feature.updateOne(
+        await Feature.updateOne(
             {_id : req.params.featureID},
             {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : modifiedBy, modifiedOn : date} }
         );
@@ -111,7 +108,7 @@ async function deleteFeature (req,res) {
     let action = "Deleted Feature";
     let UserID = req.user.payload.userID; 
     try {
-        let featureDelete = await Feature.remove({ _id : req.params.featureID });
+        await Feature.remove({ _id : req.params.featureID });
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
         res.status(200).json({message : "Successfully deleted feature"});
     } catch (error) {

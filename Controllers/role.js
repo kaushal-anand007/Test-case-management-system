@@ -1,5 +1,4 @@
 const { json } = require('body-parser');
-const project = require('../Models/project');
 const Role =require('../Models/role');
 const RoleCounter = require('../Models/counter');
 const Log = require('../Models/log');
@@ -28,35 +27,31 @@ async function postRoleInfo (req,res) {
     let { roleName,  createdBy, featureList } = req.body;
     let roleCode;
 
-    try { 
+    try {
         if(roleName == "" || createdBy == "" || featureList == ""){
             res.json({ message : "Please fill all the fields"});
         }else{
-            Role.findOne({"featureList" : featureList}, async function(err,results){
-                if(err){ res.json({ message : err})};
-                if(results){
-                    res.json({ message : "The feature List provided already exists!!!!"});
-                }else{
-                    getNextSequenceValue("RoleCode").then(async data=>{
-                       let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList};
-                       let rolecode = 'R'+ data;    
-                       roleObj.roleCode = rolecode;   
-                       await Role.create(roleObj);
-                           let result = {
-                               status : "success",
-                               data : "Role sucessfully Added!!"
+            getNextSequenceValue("RoleCode").then(async data=>{
+            Role.findOne({"roleName" : roleName}, async function(err, result){ 
+                if(err) { res.json({ message : err})}
+                   if(result) {res.json({ message : "Duplicate Role!!" })}
+                   else{ 
+                    let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList, "userID" : userID};
+                    let rolecode = 'R'+ data;    
+                    roleObj.roleCode = rolecode;   
+                    await Role.create(roleObj);
+                        let result = {
+                            status : "success",
+                                data : "Role sucessfully Added!!"
+                                  }
+                                await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+                                res.status(200).json(result);
                            }
-                           await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
-                           res.status(200).json(result);
-                       }).catch(error => {
-                           res.status(400).json( { message : error });
-                      });    
-                    }
-            }).catch(error => {
+                        });   
+                    }).catch(error => {
                 res.status(400).json( { message : error });
-            })
+            });    
         }
-        
     } catch (error) {
         console.log(error);
         res.status(400).json({ message :  error }); 
@@ -92,13 +87,17 @@ async function updateRoleInfo (req,res) {
     let UserID = req.user.payload.userId;
     let action = "Updated role";
     let { roleName, featureList, modifiedBy} = req.body;
-
     try {
-        let roleUpdate = await Role.findByIdAndUpdate(
+        await Role.findByIdAndUpdate(
             {_id : req.params.roleID},
-            { $addToSet : {"featureList" : featureList }, $set : {roleName, modifiedBy, modifiedOn : date}},
+            {$set : {roleName, modifiedBy, "modifiedOn" : date, "featureList" : ""}},
             {new: true}
         );
+        await Role.findOneAndUpdate(
+            {_id : req.params.roleID},
+            {$addToSet : {"featureList" : featureList }},
+            { upsert: true,new: true}
+        )
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
         res.status(200).json({message : "Successfully updated role"});
     } catch (error) {
@@ -114,7 +113,7 @@ async function deleteRoleInfo (req,res) {
     let action = "Deleted role";
     let UserID = req.user.payload.userId;
     try {
-        let roleDelete = await Role.remove({_id : req.params.roleID});
+        await Role.remove({_id : req.params.roleID});
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
         res.status(200).json({message : "Successfully deleted role"});
     } catch (error) {
@@ -130,3 +129,4 @@ module.exports = {
     updateRoleInfo : updateRoleInfo,
     deleteRoleInfo : deleteRoleInfo
 }
+

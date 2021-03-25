@@ -48,6 +48,10 @@ const reportSchema = new mongoose.Schema({
 
     comments : {
         type : String
+    },
+
+    featureData : {
+        type : String
     }
 });
 

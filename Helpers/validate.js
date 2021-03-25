@@ -44,27 +44,10 @@ async function verifyAccessTokenForUserId(req, res, next) {
     next();
 }
 
-//Get ip Address
-function getIpAddress(req, uniqueTrack) {
-    var ipAddress;
-    var forwardedIpsStr = req.headers['x-forwarded-for'];
-
-    if (forwardedIpsStr) {
-        var forwardedIps = forwardedIpsStr.split(',');
-        ipAddress = forwardedIps[0];
-    }
-    if (!ipAddress) {
-        // If request was not forwarded
-        ipAddress = req.connection.remoteAddress;
-    }
-    return ipAddress;
-}
-
 module.exports = {
     isValidEmail: isValidEmail,
     validatePassword: validatePassword,
-    verifyAccessTokenForUserId: verifyAccessTokenForUserId,
-    getIpAddress: getIpAddress
+    verifyAccessTokenForUserId: verifyAccessTokenForUserId
 }
 
 

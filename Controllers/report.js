@@ -12,23 +12,22 @@ async function getNextSequenceValue(sequenceName){
             
          },{upsert: true, returnNewDocument:true});
          console.log(sequenceDocument);
-         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1: 1;
+         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1 : 1;
     } catch (error) {
         console.log(error);
     }
-  
- }
+}
 
- //Function to post the report details.
+//Function to post the report details.
 async function reportDetails (req,res) {
  let date = new Date().toLocaleDateString();
  let time = new Date().toLocaleTimeString();
  let action = "Added Report";
  let reportCode;
  let UserID = req.user.payload.userID;   
- let {testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink , priority, bugIdStatus, comments} = req.body;
+ let {testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink , priority, bugIdStatus, comments } = req.body;
  try {
-    let reportObj ={reportCode, testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink, priority, bugIdStatus, comments };
+    let reportObj ={ reportCode, testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink, priority, bugIdStatus, comments };
      if(testerId == "" || projectName == "" || expectedResult == "" || actualResult == "" || noOfTestCasePassed == "" || noOfTestCaseFailed == "" || bugId == "" || jiraLink == "" || priority == "" || bugIdStatus == "" || comments == ""){
          res.json({ message : "Please fill all the fields!!"})
      }else{
@@ -83,13 +82,13 @@ async function getReportDetailsById (req,res) {
 
 //Function to update report details.
 async function updateReportDetails (req,res) {
- let date = new Date().toLocaleDateString();
- let time = new Date().toLocaleTimeString();
- let action = "Updated Report";
- let UserID = req.user.payload.userId; 
+    let date = new Date().toLocaleDateString();
+    let time = new Date().toLocaleTimeString();
+    let action = "Updated Report";
+    let UserID = req.user.payload.userId; 
     let report = req.body;
     try {
-        let reportUpdate = await Report.updateOne(
+        await Report.updateOne(
             {_id : req.params.reportID},
             {$set : report}
         );
@@ -108,7 +107,7 @@ async function deleteReportDetails (req,res) {
     let action = "Deleted Report";
     let UserID = req.user.payload.userId; 
     try {
-        let reportDelete = await Report.remove({_id : req.params.reportID});
+        await Report.remove({_id : req.params.reportID});
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});
         res.status(200).json({message : "Successfully deleted report"});
     } catch (error) {

@@ -10,8 +10,16 @@ const roleSchema = new mongoose.Schema({
     },
     
     featureList : [{ 
-        type : String
+        _id : { type : String},
+        featureCode : { type : String},
+        featureName : { type : String},
+        moduleName : {type : String},
+        status : { type : Boolean, default : true}
     }],
+
+    userID : {
+        type : String
+    },
 
     createdBy : {
         type : String
@@ -27,7 +35,7 @@ const roleSchema = new mongoose.Schema({
 
     modifiedOn : {
         type : String
-    } 
+    }
 });
 
 module.exports = mongoose.model('Role', roleSchema);

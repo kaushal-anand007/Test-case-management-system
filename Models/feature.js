@@ -27,7 +27,11 @@ const featureSchema =new mongoose.Schema({
 
    modifiedOn : {
        type : String
-   }
+   },
+
+   featureData : {
+    type : String
+ }
 })
 
 

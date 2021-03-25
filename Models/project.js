@@ -16,6 +16,12 @@ const projectSchema=new mongoose.Schema({
         type : String
     },
 
+    members : [{
+        _id : { type : String},
+        fName : { type : String},
+        lName : { type : String}
+    }],
+
     startDate : {
         type : String
     },
@@ -63,7 +69,8 @@ const projectSchema=new mongoose.Schema({
             type : String
         },
 
-        assignedTo : { _id : { type : String},
+        assignedTo : { 
+            _id : { type : String},
             fName : { type : String},
             lName : { type : String}
         },
@@ -74,6 +81,10 @@ const projectSchema=new mongoose.Schema({
     },
 
     time : {
+        type : String
+    },
+
+    featureData : {
         type : String
     }
 }); 

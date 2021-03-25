@@ -12,31 +12,30 @@ async function postProject (req,res) {
     let testCase;
     
     try {
-        let { nameOfProject, handledBy, projectDescription, startDate, endDate} = req.body;
-        let projectObj = { nameOfProject, handledBy, projectDescription, startDate, endDate, date, time, runLog, testCase}
+        let { nameOfProject, handledBy, projectDescription, members, startDate, endDate} = req.body;
+        let projectObj = { nameOfProject, handledBy, projectDescription, members, startDate, endDate, date, time, runLog, testCase}
         if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
-            Project.findOne({"nameOfProject" : nameOfProject}, async function(err,results){
-                if(err){ res.json({message : err})}
-                if(results){
-                    res.json({ message : "The project name already exists!!!!"});
-                }else{
-                    await Project.create( projectObj);
-                    let result = {
-                        status : 'success',
-                        data : {
-                            message : " Project has sucessfully created "
+            await Project.findOne({"nameOfProject" : nameOfProject}, async function(err,results){
+                    if(err){ res.json({message : err})}
+                    if(results){
+                        res.json({ message : "The project name already exists!!!!"});
+                    }else{
+                        await Project.create( projectObj);
+                        let result = {
+                            status : 'success',
+                            data : {
+                                message : " Project has sucessfully created "
+                            }
                         }
+                        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+                        res.status(200).json(result);
                     }
-                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
-                    res.status(200).json(result);
-                    
-                }
-            })
-        }
-    } catch (error) {
-        console.log(error);
+                });
+            }
+        } catch (error) {
+            console.log(error);
         res.status(400).json({ message : error });
     }
 }
@@ -85,11 +84,11 @@ async function updateProject (req,res) {
     let time = new Date().toLocaleTimeString();
     let action = "Updated project details";
     let userID = req.user.payload.userId;
-    let { nameOfProject, handledBy, projectDescription , startDate, endDate} = req.body; 
+    let { nameOfProject, handledBy, projectDescription , members, startDate, endDate} = req.body; 
     
     try {
         //Getting _id from array inside the db.
-        let objId1 = await Project.findOne({ _id : req.params.projectID});
+        let objId = await Project.findOne({ _id : req.params.projectID});
 
         //created object to update the project details.
         let setQuery = {};
@@ -110,10 +109,17 @@ async function updateProject (req,res) {
         }
 
         let update = await Project.findOneAndUpdate(
-            {_id : objId1},
-            {$set : setQuery},
+            {_id : objId},
+            {$set : {setQuery, "members" : ""}},
             {new : true}
         );
+
+        await Project.findOneAndUpdate(
+            {_id : objId},
+            {$addToSet : {"members" : members }},
+            { upsert: true, new: true}
+        );
+
         console.log("setQuery --- >",setQuery);
         console.log("update --- >",update);
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
@@ -131,6 +137,7 @@ async function updateRunLog (req,res) {
     let time = new Date().toLocaleTimeString();
     let action = "Pushed run log details";
     let userID = req.user.payload.userId;
+
     //Getting _id from array inside the db.
     let objId1 = await Project.findOne({ _id : req.params.projectID});
     let {runLogCount, testCasePassed, testCaseFailed, comment, imageOrAttachment} = req.body;
@@ -141,7 +148,7 @@ async function updateRunLog (req,res) {
       res.json({ message : "Please fill all the details in runlog!!!"});  
     }else{
         try {
-            let update = await Project.findOneAndUpdate(
+            await Project.findOneAndUpdate(
                 {_id : objId1},
                 {$push :{"runLog":runLogObj}}
             ) 
@@ -169,7 +176,7 @@ async function updateTestCase (req,res) {
         res.json({ message : "Please fill all the details in test case!!!"});
     }else{
         try {
-            let update = await Project.findOneAndUpdate(
+            await Project.findOneAndUpdate(
                 {_id : objId1},
                 {$push :{"testCase": testCaseObj}}
             ) 
@@ -189,7 +196,7 @@ async function deleteProject (req,res) {
     let action = "Deleted test case";
     let userID = req.user.payload.userId;
     try {
-        let deleteProject = await Project.remove({_id : req.params.projectID});
+        await Project.remove({_id : req.params.projectID});
         await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID});
         res.status(200).json({message : "Successfully deleted project"});
     } catch (error) {

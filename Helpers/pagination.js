@@ -1,13 +1,13 @@
+const project = require("../Models/project");
+
 //Pagination.
 function paginationResults (model) {
     return async (req, res, next) => {
-        const page = parseInt(req.query.page);
-        const limit = parseInt(req.query.limit);
-
-        const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
-
-        const results = {};
+        let page = parseInt(req.query.page);
+        let limit = parseInt(req.query.limit);
+        let startIndex = (page - 1) * limit;
+        let endIndex = page * limit;
+        let results = {};
 
         if(endIndex < model.length) {
             results.next = {

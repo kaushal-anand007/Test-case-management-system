@@ -2,20 +2,21 @@ const express=require('express');
 const router =express.Router();
 const ReportController = require("../Controllers/report");
 const { verifyAccessTokenForUserId } =require('../Helpers/validate');
+const { getFeatureAccess } = require('../Helpers/role');
 
 //Post report details.
-router.post('/add', verifyAccessTokenForUserId, ReportController.reportDetails);
+router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ReportController.reportDetails);
 
 //Get report details.
-router.get('/list', verifyAccessTokenForUserId, ReportController.getReportDetails); 
+router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ReportController.getReportDetails); 
 
 //Get report details by id.
-router.get('/get/:reportID', verifyAccessTokenForUserId, ReportController.getReportDetailsById);
+router.get('/get/:reportID', verifyAccessTokenForUserId, getFeatureAccess, ReportController.getReportDetailsById);
 
 //Update report details.
-router.put('/update/:reportID', verifyAccessTokenForUserId, ReportController.updateReportDetails);
+router.put('/update/:reportID', verifyAccessTokenForUserId, getFeatureAccess, ReportController.updateReportDetails);
 
 //Delete report details.
-router.delete('/remove/:reportID', verifyAccessTokenForUserId, ReportController.deleteReportDetails);
+router.delete('/remove/:reportID', verifyAccessTokenForUserId, getFeatureAccess, ReportController.deleteReportDetails);
 
 module.exports =router;
