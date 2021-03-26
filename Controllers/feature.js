@@ -23,7 +23,7 @@ async function postFeature (req,res){
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Added Feature";
-    let UserID = req.user.payload.userID;  
+    let user_ID = req.user.payload.userId; 
     let { featureName,  createdBy, moduleName} = req.body; 
 
     try {
@@ -44,7 +44,7 @@ async function postFeature (req,res){
                                 message : "Feature created sucessfully!!"
                             }
                         }
-                        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+                        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
                         res.status(200).json(result);
                         }
                     });  
@@ -86,14 +86,14 @@ async function updateFeature (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Updated Feature";
-    let UserID = req.user.payload.userID;  
+    let user_ID = req.user.payload.userId; 
     let { featureName, moduleName, modifiedBy} = req.body;
     try {
         await Feature.updateOne(
             {_id : req.params.featureID},
             {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : modifiedBy, modifiedOn : date} }
         );
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});  
         res.status(200).json({message : "Successfully updated feature"});
     } catch (error) {
         console.log(error)
@@ -106,10 +106,10 @@ async function deleteFeature (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Deleted Feature";
-    let UserID = req.user.payload.userID; 
+    let user_ID = req.user.payload.userId; 
     try {
         await Feature.remove({ _id : req.params.featureID });
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
         res.status(200).json({message : "Successfully deleted feature"});
     } catch (error) {
         console.log(400).json({ message : error });

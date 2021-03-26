@@ -23,7 +23,7 @@ async function postRoleInfo (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Added role";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     let { roleName,  createdBy, featureList } = req.body;
     let roleCode;
 
@@ -36,7 +36,7 @@ async function postRoleInfo (req,res) {
                 if(err) { res.json({ message : err})}
                    if(result) {res.json({ message : "Duplicate Role!!" })}
                    else{ 
-                    let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList, "userID" : userID};
+                    let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList, "userID" : user_ID};
                     let rolecode = 'R'+ data;    
                     roleObj.roleCode = rolecode;   
                     await Role.create(roleObj);
@@ -44,7 +44,7 @@ async function postRoleInfo (req,res) {
                             status : "success",
                                 data : "Role sucessfully Added!!"
                                   }
-                                await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+                                  await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
                                 res.status(200).json(result);
                            }
                         });   
@@ -84,7 +84,7 @@ async function getRoleInfoById (req,res) {
 async function updateRoleInfo (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     let action = "Updated role";
     let { roleName, featureList, modifiedBy} = req.body;
     try {
@@ -98,7 +98,7 @@ async function updateRoleInfo (req,res) {
             {$addToSet : {"featureList" : featureList }},
             { upsert: true,new: true}
         )
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({message : "Successfully updated role"});
     } catch (error) {
         console.log(error);
@@ -111,10 +111,10 @@ async function deleteRoleInfo (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Deleted role";
-    let UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     try {
         await Role.remove({_id : req.params.roleID});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({message : "Successfully deleted role"});
     } catch (error) {
         console.log(error);

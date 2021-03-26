@@ -53,7 +53,6 @@ async function registerUser (req,res) {
     let action = "Added new user";
     let {fName, lName, email, role, status, filename, path} =req.body;
     let userCode;
-    let UserID = req.user.payload.userId;
 
     //Generating conformation code.
     const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -92,8 +91,8 @@ async function registerUser (req,res) {
 
                     getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path), password;
 
-                    let userID = user && user._id;
-                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});
+                    let user_ID = user && user._id;
+                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
 
                     res.status(200).json(result);
                 }).catch(error => {
@@ -161,6 +160,7 @@ async function mailConfirm (req, res){
 async function passwordCreate (req,res){
     let { password } = req.body;
     let action = "Created Password";
+    
 
     //Current date and time.
     let date = new Date().toLocaleDateString();
@@ -170,7 +170,8 @@ async function passwordCreate (req,res){
         const salt = await bcrypt.genSalt(5);
         password = await bcrypt.hash(password, salt);
         let user =  await User.findOneAndUpdate({_id : req.params.userID},{
-            $set : { "password" : password}
+            $set : { "password" : password},
+            $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}
         });
 
         //Creating token.
@@ -184,7 +185,6 @@ async function passwordCreate (req,res){
                     userStatus : user.status
                 } 
             }
-            await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID": user._id}); 
         res.status(200).json(result);   
     }catch (error) {
         console.log(error);
@@ -195,37 +195,56 @@ async function passwordCreate (req,res){
 
 //Forget password.
 async function forgetPassword (req,res) {
-    let fname = req.user.payload.user.fName;
-    //Generating password for the user.
-    const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let token = '';
-    for (let i = 0; i < 7; i++) {
-        token += characters[Math.floor(Math.random() * characters.length )];
-    }
-    let password = 'X'+token;
     let { email } = req.body;
+
+    //Generating conformation code.
+    const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let otp = '';
+    for (let i = 0; i < 6; i++) {
+        otp += characters[Math.floor(Math.random() * characters.length )];
+    }
+
+    // let timeOut = setTimeout(120000, async function(){
+    //     await User.findOneAndUpdate({"email" : email}, {$set});
+    //     console.log('Request has timed out.');
+    // });
     try {
         let result = await User.findOne({ "email" : email});
-        const salt = await bcrypt.genSalt(5);
-        let Password = await bcrypt.hash(password, salt);
+        let getEmail =result.email;
+        //let fName = ;
+        // const salt = await bcrypt.genSalt(5);
+        // let Password = await bcrypt.hash(password, salt);
         if (result == null) {
-            res.status(400).json({message : "The email you have enter is wrong!!!"})
+            res.status(400).json({message : "The email you have entered is wrong!!!"})
         } else {
-            await User.findOneAndUpdate({_id : req.params.userID}, {$set : {"password" : Password}});
-            let fName = fname;
+            let fName = result.fName;
             email = "";
             let confirmationCode = "";
             let html = "forget password";
             let filename= "";
             let path = "";
 
-            getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, password);
-            res.status(200).json({ message : "You have sucessfully changed you password! check your registered email."});  
+            getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp);
+            await User.findOneAndUpdate({"email" : getEmail}, {$set : {"otp" : otp}});
+            res.status(200).json({ message : "Otp have been send to your registered mail!! please check it."}); 
         }
     } catch (error) {
         console.log(error);
         res.status(400).json({error});
     }
+};
+
+// //Opt validation
+// async function otpValidation (req,res){
+//     let { otp } = req.body;
+
+//     try {
+//         let checkOtp = await User.findOne({"otp" : otp})
+//         if(opt === null || )
+//     } catch (error) {
+        
+//     }
+    
 }
 
 //Get all user details.
@@ -271,14 +290,15 @@ async function updateStatusBlock (req,res) {
     let { status } = req.body;
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let UserID = req.user.payload.userId;
     let action = "User has been Blocked!!!";
     try {
-        let updatestatus = await User.updateOne(
+        await User.updateOne(
             {_id : req.params.userID},
             {$set : {"status" : status}});
-            res.json({ message : "User sucessfully blocked!!!"});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});     
+            
+            let user_ID = req.user.payload.userId;
+            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+        res.json({ message : "User sucessfully blocked!!!"});    
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -290,14 +310,15 @@ async function updateStatusActive (req,res) {
     let { status } = req.body;
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
-    let UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     let action = "User Active!!!";
     try {
-        let updatestatus = await User.updateOne(
+        await User.updateOne(
             {_id : req.params.userID},
             {$set : {"status" : status}});
-            res.json({ message : "User sucessfully unblocked!!!"});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});     
+            
+            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+            res.json({ message : "User sucessfully unblocked!!!"});     
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -310,14 +331,15 @@ async function updateUserById (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Updated user";
-    let UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
 
     try{
       await User.updateOne(
         {_id : req.params.userID},
         {$set : user}
-         );
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        );
+         
+         await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
      res.json({ message : "Updated user!!!"});
     }catch (err) {
        console.log(err);
@@ -330,10 +352,10 @@ async function removeUserById (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Deleted user";
-    let UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     try{
         await User.remove({_id: req.params.userID});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
         res.json({ message : "Deleted user!!!"});
     }catch (err) {
         console.log(err);
@@ -348,9 +370,10 @@ async function logout (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Logout";
-    const UserID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
+
     try {
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: UserID});  
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});  
         res.status(200).json({ message : "Logout Sucessfull"});
     } catch (error) {
         console.log(error);
@@ -361,7 +384,7 @@ async function logout (req,res) {
 //Get log details by it. 
 async function logDetails (req,res) {
     try {
-        let logDetails = await Log.findOne({ UserID : req.params.userID});
+        let logDetails = await Log.find({ UserID : req.params.userID});
         console.log("logDetails --- > ",logDetails);
         res.status(200).json(logDetails);
     } catch (error) {
@@ -387,7 +410,7 @@ async function logAllDetails (req,res) {
 async function login (req,res) {
     let { email, password } = req.body;
     const action = "Login";
-    // validate given inputs , check email and password. 
+    //validate given inputs, check email and password. 
     try{
         if(!Validation.isValidEmail(email))
         {
@@ -403,7 +426,6 @@ async function login (req,res) {
         
         //Check status.
         if (user.status == "Active") {
-
         //Getting UserID.
         let user_ID = user && user._id;
 
@@ -423,7 +445,12 @@ async function login (req,res) {
                         userStatus : user.status
                     } 
                 }
-                await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: user_ID}); 
+                let check = await Log.findOne({"UserID" : user_ID});
+                if(check == null){
+                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID": user_ID});
+                }else{
+                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
+                }
                 res.status(200).json(result);
             }else {
                 res.status(400).json({ message : "Password incorrect"});
@@ -475,7 +502,7 @@ async function dashboad (req,res) {
 //Adding update password
 async function updatePassword (req, res){
     let { Password, newPassword } = req.body;
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
 
     //Current date and time.
     let date = new Date().toLocaleDateString();
@@ -494,7 +521,7 @@ async function updatePassword (req, res){
                     //Updating new password.
                     await users.updateOne({ password : newPassword});
 
-                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], UserID: userID}); 
+                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
 
                     res.status(200).json({ message : "Sucessfully Changed the password"}); 
                 }else{

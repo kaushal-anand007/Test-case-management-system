@@ -24,7 +24,7 @@ async function reportDetails (req,res) {
  let time = new Date().toLocaleTimeString();
  let action = "Added Report";
  let reportCode;
- let UserID = req.user.payload.userID;   
+ let user_ID = req.user.payload.userId;   
  let {testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink , priority, bugIdStatus, comments } = req.body;
  try {
     let reportObj ={ reportCode, testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink, priority, bugIdStatus, comments };
@@ -44,7 +44,8 @@ async function reportDetails (req,res) {
                         status : "success",
                         data : "Report sucessfully Added!!"
                     }
-                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID}); 
+
+                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
                     res.status(200).json(result);
                 }).catch(error => {
                     res.status(400).json( { message : error });
@@ -85,14 +86,14 @@ async function updateReportDetails (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Updated Report";
-    let UserID = req.user.payload.userId; 
+    let user_ID = req.user.payload.userId; 
     let report = req.body;
     try {
         await Report.updateOne(
             {_id : req.params.reportID},
             {$set : report}
         );
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({message : "Successfully updated report"});
     } catch (error) {
         console.log(error);
@@ -105,10 +106,10 @@ async function deleteReportDetails (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Deleted Report";
-    let UserID = req.user.payload.userId; 
+    let user_ID = req.user.payload.userId; 
     try {
         await Report.remove({_id : req.params.reportID});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : UserID});
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({message : "Successfully deleted report"});
     } catch (error) {
         res.status(400).json({ message : error });

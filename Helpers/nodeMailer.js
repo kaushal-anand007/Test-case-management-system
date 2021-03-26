@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 //Importig .env here.
 require('dotenv').config();
 
-async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, password) {
+async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp) {
     //using nodemailer.
     let transporter =nodemailer.createTransport({
         service: 'gmail',
@@ -35,11 +35,11 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
     }
 
     if(html == 'forget password' ){
-        mailOptions['subject'] = 'New password for the user.'
-        mailOptions['html'] =  `<div><h1>Forget Password</h1>
-                                     <h2>Hello ${fName} </h2>
-                                     <p>Your New Password is ${password}.
-                                 </div>`
+        mailOptions['subject'] = 'Otp for password generation is: '
+        mailOptions['html'] =  `<div>
+                                     <h3>OTP for account verification is </h3>
+                                     <h1 style='font-weight:bold;'>${otp}</h1>
+                                </div>`
     }
                 
     if (!filename == '' && !path == '') {

@@ -7,7 +7,7 @@ async function postProject (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Added project details";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     let runLog;
     let testCase;
     
@@ -29,7 +29,7 @@ async function postProject (req,res) {
                                 message : " Project has sucessfully created "
                             }
                         }
-                        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+                        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
                         res.status(200).json(result);
                     }
                 });
@@ -83,7 +83,7 @@ async function updateProject (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Updated project details";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     let { nameOfProject, handledBy, projectDescription , members, startDate, endDate} = req.body; 
     
     try {
@@ -120,9 +120,7 @@ async function updateProject (req,res) {
             { upsert: true, new: true}
         );
 
-        console.log("setQuery --- >",setQuery);
-        console.log("update --- >",update);
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({ message :"Updated project details"});
     } catch (error) {
         console.log(error);
@@ -136,7 +134,7 @@ async function updateRunLog (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Pushed run log details";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
 
     //Getting _id from array inside the db.
     let objId1 = await Project.findOne({ _id : req.params.projectID});
@@ -151,8 +149,8 @@ async function updateRunLog (req,res) {
             await Project.findOneAndUpdate(
                 {_id : objId1},
                 {$push :{"runLog":runLogObj}}
-            ) 
-            await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+            ); 
+            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
             res.status(200).json({ message :"Updated runLog details"});
         } catch (error) {
             console.log(error);
@@ -166,7 +164,7 @@ async function updateTestCase (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Pushed test Case details";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     //Getting _id from array inside the db.
     let objId1 = await Project.findOne({ _id : req.params.projectID});
     let {title, testDescriptions, attachment, status, assignedTo} = req.body;
@@ -179,8 +177,8 @@ async function updateTestCase (req,res) {
             await Project.findOneAndUpdate(
                 {_id : objId1},
                 {$push :{"testCase": testCaseObj}}
-            ) 
-            await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID}); 
+            );
+            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
             res.status(200).json({message : "Successfully updated project"});
         } catch (error) {
             console.log(error);
@@ -194,10 +192,10 @@ async function deleteProject (req,res) {
     let date = new Date().toLocaleDateString();
     let time = new Date().toLocaleTimeString();
     let action = "Deleted test case";
-    let userID = req.user.payload.userId;
+    let user_ID = req.user.payload.userId;
     try {
         await Project.remove({_id : req.params.projectID});
-        await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID" : userID});
+        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
         res.status(200).json({message : "Successfully deleted project"});
     } catch (error) {
         console.log(error);

@@ -69,6 +69,15 @@ const userSchema=new mongoose.Schema({
 
     path : {
         type : String
+    },
+
+    otp : {
+        type : String
+    },
+
+    timeOut : {
+        type : Boolean,
+        default : false
     }
  });
 
