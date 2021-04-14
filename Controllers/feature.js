@@ -2,34 +2,37 @@ const Feature = require('../Models/feature');
 const RoleCounter = require('../Models/counter');
 const { json } = require('body-parser');
 const Log =require('../Models/log');
+const toCreateMessageforLog = require('../Helpers/log');
 
 //Function to auto increment the featurecode.
-async function getNextSequenceValue(sequenceName){
-    try {
-        let sequenceDocument = await RoleCounter.findOneAndUpdate({"role" : sequenceName},{
-            $set : { role : sequenceName},
-            $inc : { sequenceValue: 1 }
-            
-         },{upsert: true, returnNewDocument:true});
-         console.log(sequenceDocument);
-         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1: 1;
-    } catch (error) {
-        console.log(error);
-    }
- }
+function getNextSequenceValue(sequenceName){
+    return new Promise ( (resolve, reject) => {
+             RoleCounter.findOneAndUpdate({"role" : sequenceName},{
+                $set : { role : sequenceName},
+                $inc : { sequenceValue: 1 }
+             },{upsert: true, returnNewDocument:true}).then( (result) => {
+                console.log(result);
+                resolve(result ?  parseInt(result.sequenceValue)+1 : 1);
+             })
+             .catch( (error) => {
+                console.log("error -- > ",error);
+                reject(error);
+        });
+    });
+};
 
 //Function to post the feature details.
 async function postFeature (req,res){
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
-    let action = "Added Feature";
-    let user_ID = req.user.payload.userId; 
-    let { featureName,  createdBy, moduleName} = req.body; 
+    let date = new Date();
+    let action = "Added Feature";       
+    let userID = req.user.payload.userId; 
+    let actedBy = req.user.payload.user.fName;
+    let { featureName,  createdBy, moduleName, relevantData} = req.body; 
 
     try {
         getNextSequenceValue("featureCode").then(data=>{
             let featurecode = 'F'+ data;
-            let featureObj = {  featureCode: featurecode, featureName, createdBy, createdOn : date, moduleName};
+            let featureObj = {  featureCode: featurecode, featureName, createdBy, createdOn : date, moduleName, "createdBy" : actedBy, "createdOn" : date};
             if( featureName == "" || createdBy == "" || moduleName == null){
                 return res.json({ message : "Please fill all the fields!!!"})
             }else{
@@ -44,12 +47,13 @@ async function postFeature (req,res){
                                 message : "Feature created sucessfully!!"
                             }
                         }
-                        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
+                        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});                        
                         res.status(200).json(result);
                         }
                     });  
                 }  
-            }).catch(error => {
+            }).catch( error => {
+                console.log(error);
             res.status(400).json( { message : error });
         });
     } catch (error) {
@@ -83,17 +87,18 @@ async function getFeatureById (req,res) {
 
 //Function to update feature details.
 async function updateFeature (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Updated Feature";
-    let user_ID = req.user.payload.userId; 
-    let { featureName, moduleName, modifiedBy} = req.body;
+    let userID = req.user.payload.userId; 
+    let actedBy = req.user.payload.user.fName;
+    let { featureName, moduleName, relevantData} = req.body;
     try {
-        await Feature.updateOne(
+        let feature = await Feature.updateOne(
             {_id : req.params.featureID},
-            {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : modifiedBy, modifiedOn : date} }
+            {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : actedBy, "modifiedOn" : date} }
         );
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});  
+        let featurecode = feature.featureCode;
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
         res.status(200).json({message : "Successfully updated feature"});
     } catch (error) {
         console.log(error)
@@ -103,13 +108,17 @@ async function updateFeature (req,res) {
 
 //Function to delete the feature details.
 async function deleteFeature (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
+    let { relevantData } = req.body;
     let action = "Deleted Feature";
-    let user_ID = req.user.payload.userId; 
+    let userID = req.user.payload.userId; 
+    let actedBy = req.user.payload.user.fName;
+    let featureID = req.params.featureID;
     try {
-        await Feature.remove({ _id : req.params.featureID });
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
+        let feature = await Feature.findOne({ _id : featureID });
+        let featurecode = feature.featureCode;
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+        await Feature.remove({ _id : featureID });  
         res.status(200).json({message : "Successfully deleted feature"});
     } catch (error) {
         console.log(400).json({ message : error });

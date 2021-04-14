@@ -15,6 +15,21 @@ const userSchema=new mongoose.Schema({
         type : String, 
     },
 
+    address : {
+        doorNumber : { type : String },
+        street : { type : String  },
+        area : { type : String },
+        landmark : { type : String },
+        city : { type : String },
+        state : { type : String },
+        postalCode : { type : Number}
+    },
+
+    phone : {
+        type : Number,
+        required : [true, "Please enter phone number"],
+    },
+
     email: {
         type : String,
         unique : true,
@@ -28,8 +43,7 @@ const userSchema=new mongoose.Schema({
     },
 
     role: {
-        type : String,
-        unique: true
+        type : String
     },
 
     token: 
@@ -40,22 +54,32 @@ const userSchema=new mongoose.Schema({
     },
 
     date : { 
-        type : String
+        type : Date
     },
 
     status : {
         type : String,
-        default : 'Pending',
-        enum : ['Active', 'Pending', 'Blocked']
+        default : 'Created',
+        enum : ['Active', 'Created', 'Blocked']
+    },
+
+    verification : {
+        emailConfirmation : {
+            type : String,
+            default : 'Pending',
+            enum : ['Pending', 'Confirmed']
+        },
+
+        phoneConfirmation : {
+            type : String,
+            default : 'Pending',
+            enum : ['Pending', 'Confirmed']
+        }
     },
 
     confirmationCode: { 
         type: String, 
         unique: true 
-    },
-
-    time : {
-        type :String 
     },
 
     company : {
@@ -72,12 +96,33 @@ const userSchema=new mongoose.Schema({
     },
 
     otp : {
-        type : String
+        code : {type : String},
+        expires_at : {type: Number},
     },
 
     timeOut : {
         type : Boolean,
         default : false
+    },
+
+    createdBy : {
+        type : String
+    },
+
+    createdOn : {
+        type : Date
+    },
+
+    modifiedBy : {
+        type : String
+    },
+
+    modifiedOn : {
+        type : Date
+    },
+
+    reasonForBlock : {
+        type : String
     }
  });
 

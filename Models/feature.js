@@ -18,7 +18,7 @@ const featureSchema =new mongoose.Schema({
    },
 
    createdOn : {
-        type : String
+        type : Date
    },
 
    modifiedBy : {
@@ -26,12 +26,13 @@ const featureSchema =new mongoose.Schema({
    },
 
    modifiedOn : {
-       type : String
+       type : Date
    },
 
-   featureData : {
-    type : String
- }
+   status : {
+    type : String,
+    enum : ['Active', 'Inactive']
+}
 })
 
 

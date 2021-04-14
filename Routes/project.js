@@ -10,8 +10,20 @@ const { getFeatureAccess } = require('../Helpers/role');
 //post project details.
 router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
-//Get project details.
-router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, paginationResults(Project), ProjectController.getProject);
+//Post scenario.
+router.post('/add-scenario/:projectID', verifyAccessTokenForUserId, ProjectController.postScenario);
+
+//Post test case.
+router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);
+
+//Post run log.
+router.post('/add-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postRunLog);
+
+//Post pdf of run log.
+router.get('/runlog-pdf/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.generatePdf);
+
+//Get project data.
+router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getProject);
 
 //Get filtered data.
 router.get('/filtered-list', ProjectController.getFilterdProject);
@@ -23,13 +35,13 @@ router.get('/get/:projectID', verifyAccessTokenForUserId, getFeatureAccess, Proj
 router.put('/update/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateProject);
 
 //Update run-log
-router.put('/update-run/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
+router.put('/update-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
 
 //Update test-case
-router.put('/update-test/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
+router.put('/upadte-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
 
 //Remove project.
-router.delete('/remove/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.deleteProject);
+router.delete('/remove/:projectID', verifyAccessTokenForUserId, ProjectController.deleteProject);
 
 module.exports =router;
 

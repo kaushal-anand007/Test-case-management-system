@@ -3,6 +3,11 @@ const express=require('express');
 const bodyParser=require('body-parser');
 const connectDB = require('./config/db');
 const cors =require("cors");
+const ejs = require("ejs");
+const path = require("path");
+const fs = require("fs");
+//const ejs = require('ejs');
+const Report =require('./Models/report');
 
 //INSTANCE of express
 const app=express();
@@ -19,6 +24,12 @@ app.use( bodyParser.json());
 //DB Connection.
 connectDB();
 
+// Render static files
+app.use(express.static('public'));
+
+// Set the view engine to ejs
+app.set('view engine', 'ejs');
+
 //IMPORTS ROUTES
 const userRoute=require('./Routes/user');
 app.use('/user', userRoute);
@@ -34,11 +45,6 @@ app.use('/project', projectRoute);
 
 const reportRoute=require('./Routes/report');
 app.use('/report', reportRoute);
-
-//ROUTES
-app.get('/', (req,res) => {
-  res.send("Hello World");
-});
 
 //How we start listening the server(port).
 app.listen(3000, () => {console.log("Listening on port 3000...")});

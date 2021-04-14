@@ -50,9 +50,29 @@ const reportSchema = new mongoose.Schema({
         type : String
     },
 
-    featureData : {
+    filename : {
         type : String
-    }
+    },
+
+    pdfFileName : {
+        type : String
+    },
+
+    createdBy : {
+        type : String
+    },
+
+    createdOn : {
+        type : Date
+    },
+
+    modifiedBy : {
+        type : String
+    },
+
+    modifiedOn : {
+        type : Date
+    },
 });
 
 module.exports = mongoose.model('Report', reportSchema );

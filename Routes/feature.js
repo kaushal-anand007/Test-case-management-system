@@ -5,7 +5,7 @@ const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 const { getFeatureAccess } = require('../Helpers/role');
 
 //Post feature.
-router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.postFeature);
+router.post('/add/', verifyAccessTokenForUserId, FeatureController.postFeature);
 
 //Get feature.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.getFeature);
@@ -14,9 +14,9 @@ router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, FeatureContro
 router.get('/get/:featureID', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.getFeatureById)
 
 //Update traceability report.
-router.put('/update/:featureID', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.updateFeature);
+router.put('/update/:featureID', verifyAccessTokenForUserId, FeatureController.updateFeature);
 
 //Delete traceability.
-router.delete('/remove/:featureID', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.deleteFeature);
+router.delete('/remove/:featureID', verifyAccessTokenForUserId, FeatureController.deleteFeature);
 
 module.exports =router;

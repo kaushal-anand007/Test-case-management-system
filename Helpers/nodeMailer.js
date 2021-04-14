@@ -28,17 +28,18 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
     }
 
     if(html == '' ){
-        mailOptions['subject'] = 'login credientials for your text case management web application.'
+        mailOptions['subject'] = 'login crediential for your text case management web application.'
         mailOptions['html'] = `<div>
                                     <p>Email confirm! please go to app and create password. Your email id is : ${email}</p>
                                </div>`;
     }
 
     if(html == 'forget password' ){
-        mailOptions['subject'] = 'Otp for password generation is: '
+        mailOptions['subject'] = 'OTP to generate new password'
         mailOptions['html'] =  `<div>
-                                     <h3>OTP for account verification is </h3>
-                                     <h1 style='font-weight:bold;'>${otp}</h1>
+                                     <h4>Dear User, </h4>
+                                     <h2 style='font-weight:bold;'>OTP  is <b>${otp}</b> to login into your Test Case Management System</h2>
+                                     <h4>If you did not attempted the request, please contact admin immediately.</h4>
                                 </div>`
     }
                 
@@ -48,11 +49,25 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
         ]
     }
 
+    if(html == 'get pdf for report'){
+        mailOptions['subject'] = 'Report'
+        mailOptions['attachments'] = [
+            { filename : filename, path : path}
+        ]
+    }
+
+    if(html == 'get pdf for runlog'){
+        mailOptions['subject'] = 'Run Log'
+        mailOptions['attachments'] = [
+            { filename : filename, path : path}
+        ]
+    }
+
     transporter.sendMail(mailOptions , function(err, data){
         if (err) {
             console.log("Error occurs while sending the email.",err);
         } else {
-            console.log('User was added successfully! Please check your email');
+            console.log('SucessFully send the mail!');
         }
     });
 }

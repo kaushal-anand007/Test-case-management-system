@@ -1,5 +1,3 @@
-const project = require("../Models/project");
-
 //Pagination.
 function paginationResults (model) {
     return async (req, res, next) => {

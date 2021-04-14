@@ -1,33 +1,37 @@
 const { json } = require('body-parser');
 const Report = require('../Models/report');
-const RoleCounter = require('../Models/counter');
+const RoleCounter = require('../Models/counter');;
 const Log = require('../Models/log');
+const convertHtmlToPdf = require('../Helpers/pdf');
+const toCreateMessageforLog = require('../Helpers/log');
 
-//Function to get auto count of reportcode.
-async function getNextSequenceValue(sequenceName){
-    try {
-        let sequenceDocument = await RoleCounter.findOneAndUpdate({"role" : sequenceName},{
-            $set : { role : sequenceName},
-            $inc : { sequenceValue: 1 }
-            
-         },{upsert: true, returnNewDocument:true});
-         console.log(sequenceDocument);
-         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1 : 1;
-    } catch (error) {
-        console.log(error);
-    }
-}
+//Function to auto increment the reportcode.
+function getNextSequenceValue(sequenceName){
+    return new Promise ( (resolve, reject) => {
+             RoleCounter.findOneAndUpdate({"role" : sequenceName},{
+                $set : { role : sequenceName},
+                $inc : { sequenceValue: 1 }
+             },{upsert: true, returnNewDocument:true}).then( (result) => {
+                console.log(result);
+                resolve(result ?  parseInt(result.sequenceValue)+1 : 1);
+             })
+             .catch( (error) => {
+                console.log("error -- > ",error);
+                reject(error);
+        });
+    });
+};
 
 //Function to post the report details.
 async function reportDetails (req,res) {
- let date = new Date().toLocaleDateString();
- let time = new Date().toLocaleTimeString();
+ let date = new Date();
  let action = "Added Report";
  let reportCode;
- let user_ID = req.user.payload.userId;   
- let {testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink , priority, bugIdStatus, comments } = req.body;
+ let userID = req.user.payload.userId; 
+ let actedBy = req.user.payload.user.fName;  
+ let {testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink , priority, bugIdStatus, comments, relevantData } = req.body;
  try {
-    let reportObj ={ reportCode, testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink, priority, bugIdStatus, comments };
+    let reportObj ={ reportCode, testerId, projectName, expectedResult, actualResult, noOfTestCasePassed, noOfTestCaseFailed, bugId, jiraLink, priority, bugIdStatus, comments, "createdBy" : actedBy, "createdOn" : date };
      if(testerId == "" || projectName == "" || expectedResult == "" || actualResult == "" || noOfTestCasePassed == "" || noOfTestCaseFailed == "" || bugId == "" || jiraLink == "" || priority == "" || bugIdStatus == "" || comments == ""){
          res.json({ message : "Please fill all the fields!!"})
      }else{
@@ -45,7 +49,7 @@ async function reportDetails (req,res) {
                         data : "Report sucessfully Added!!"
                     }
 
-                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
+                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});                    
                     res.status(200).json(result);
                 }).catch(error => {
                     res.status(400).json( { message : error });
@@ -83,17 +87,20 @@ async function getReportDetailsById (req,res) {
 
 //Function to update report details.
 async function updateReportDetails (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Updated Report";
-    let user_ID = req.user.payload.userId; 
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName; 
     let report = req.body;
     try {
-        await Report.updateOne(
+        let updateReport = await Report.updateOne(
             {_id : req.params.reportID},
             {$set : report}
         );
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+        updateReport["modifiedBy"] = fname;
+        updateReport["modifiedOn"] = date;
+        let reportcode = updateReport.reportCode;
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
         res.status(200).json({message : "Successfully updated report"});
     } catch (error) {
         console.log(error);
@@ -103,16 +110,39 @@ async function updateReportDetails (req,res) {
 
 //Function to delete the report details.
 async function deleteReportDetails (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Deleted Report";
-    let user_ID = req.user.payload.userId; 
+    let userID = req.user.payload.userId; 
+    let reportID = req.params.reportID;
+    let actedBy = req.user.payload.user.fName;
     try {
-        await Report.remove({_id : req.params.reportID});
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+        await Report.remove({"_id" : reportID});
+        let report = await Report.findOne({"_id" : reportID});
+        let reportcode = report.reportCode;
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
         res.status(200).json({message : "Successfully deleted report"});
     } catch (error) {
         res.status(400).json({ message : error });
+    }
+}
+
+async function generatePdf(req, res) {
+    let { filename, pdfFileName } = req.body;
+    try {
+        let Data = await Report.findOne({"_id" : req.params.reportID});
+        if (Data.filename == pdfFileName) {
+            res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
+        } else { 
+            convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
+                await Report.findOneAndUpdate({_id : req.params.reportID}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}})
+                res.status(200).json({ message : "PDF Generated!"});
+            }).catch((error) => {
+                res.status(400).json({ message : "PDF do not Generated!"});
+          });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({error});
     }
 }
 
@@ -121,5 +151,6 @@ module.exports = {
     getReportDetails : getReportDetails,
     getReportDetailsById : getReportDetailsById,
     updateReportDetails : updateReportDetails,
-    deleteReportDetails : deleteReportDetails
+    deleteReportDetails : deleteReportDetails,
+    generatePdf : generatePdf
 }

@@ -6,14 +6,28 @@ const logSchema = new mongoose.Schema({
 
     user_activities : [
         {
-            Action : { type : String },
+            referenceType : { 
+                type : String 
+            },
 
-            date : { 
+            referenceId : { 
+                type : String 
+            },
+
+            data : { 
                 type : String
             },
-        
-            time : {
-                type :String
+
+            loggedOn : { 
+                type : Date
+            },
+
+            loggedBy : {
+                 type : String
+            },
+
+            message : { 
+                type : String
             }
         }
     ]

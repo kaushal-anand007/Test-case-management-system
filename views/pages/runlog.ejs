@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">	<title>Document</title>
+</head>
+<body style="color: gray ;" >
+	<h2 style="text-align: center ;">Test Case Management Report</h2>
+	<br>
+	
+	<div class="card mb-4" style="text-decoration: solid;">
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Project Name</label>
+				<div class="col-sm-9">
+				  <%= runLog.runLogCount %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">StoreKing ID</label>
+				<div class="col-sm-9">
+					<%= runLog.testCasePassed %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Expected Result</label>
+				<div class="col-sm-9">
+				    <%= runLog.testCaseFailed %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Actual Result</label>
+				<div class="col-sm-9">
+					<%= runLog.comment %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Test Cases Passed</label>
+				<div class="col-sm-9">
+					<%= runLog.imageOrAttachment %>
+				</div>
+			</div>
+	  </div>
+</body>
+</html>

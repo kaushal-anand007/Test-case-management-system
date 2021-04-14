@@ -5,7 +5,7 @@ const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 const { getFeatureAccess } = require('../Helpers/role');
 
 //Post role related info's.
-router.post('/add/', verifyAccessTokenForUserId, RoleController.postRoleInfo);
+router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, RoleController.postRoleInfo);
 
 //Get role related info's.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, RoleController.getRoleInfo);
@@ -17,6 +17,6 @@ router.get('/get/:roleID', verifyAccessTokenForUserId, getFeatureAccess, RoleCon
 router.put('/update/:roleID', verifyAccessTokenForUserId, getFeatureAccess, RoleController.updateRoleInfo);
 
 //Delete role related info's.
-router.delete('/remove/:roleID', verifyAccessTokenForUserId, getFeatureAccess, RoleController.deleteRoleInfo);
+router.delete('/remove/:roleID', verifyAccessTokenForUserId, RoleController.deleteRoleInfo);
 
 module.exports =router;

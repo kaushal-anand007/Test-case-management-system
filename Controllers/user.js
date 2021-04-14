@@ -11,7 +11,9 @@ const RoleCounter = require('../Models/counter');
 const nodemailer = require('nodemailer');
 const { Mongoose } = require('mongoose');
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
-
+const Role = require('../Models/role');
+const role = require('../Models/role');
+const toCreateMessageforLog = require('../Helpers/log');
 
 //Importig .env here.
 require('dotenv').config();
@@ -32,31 +34,33 @@ const createToken = (user) => {
   return jwt.sign(userObj, secretKey , {expiresIn: maxToken});
 }
 
-//Function to auto increment the user code.
-async function getNextSequenceValue(sequenceName){
-    try {
-        let sequenceDocument = await RoleCounter.findOneAndUpdate({"role" : sequenceName},{
-            $set : { role : sequenceName},
-            $inc : { sequenceValue: 1 } 
-         },{returnNewDocument:true, upsert: true});
-         console.log(sequenceDocument);
-         return sequenceDocument ?  parseInt(sequenceDocument.sequenceValue)+1: 1;
-    } catch (error) {
-        console.log(error);
-    }
- }
+//Function to auto increment the usercode.
+function getNextSequenceValue(sequenceName){
+    return new Promise ( (resolve, reject) => {
+             RoleCounter.findOneAndUpdate({"role" : sequenceName},{
+                $set : { role : sequenceName},
+                $inc : { sequenceValue: 1 }
+             },{upsert: true, returnNewDocument:true}).then( (result) => {
+                console.log(result);
+                resolve(result ?  parseInt(result.sequenceValue)+1 : 1);
+             })
+             .catch( (error) => {
+                console.log("error -- > ",error);
+                reject(error);
+        });
+    });
+};
 
 //Adding Users
 async function registerUser (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Added new user";
-    let {fName, lName, email, role, status, filename, path} =req.body;
-    let userCode;
+    let { fName, lName, address, phone, email, role,  filename, path, relevantData } =req.body;
 
     //Generating conformation code.
     const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let token = '';
+
     for (let i = 0; i < 25; i++) {
         token += characters[Math.floor(Math.random() * characters.length )];
     }
@@ -64,8 +68,8 @@ async function registerUser (req,res) {
     let confirmationCode = token;
 
     try{
-     let userObj ={userCode, fName, lName, email, "role" : role, status, "date" : date, "time" : time, "confirmationCode" : confirmationCode, filename, path };
-     if(fName == "" || lName == "" || email == "" || role == ""){
+     let userObj = { fName, lName, address, phone, email, "role" : role, "date" : date, "confirmationCode" : confirmationCode, filename, path, "createdBy" : fName, "createdOn" : date };
+     if(fName == "" || lName == "" || email == "" || role == "" || address == "" || phone == ""){
          res.json({ message : "Please fill all the fields!!"})
      }else{
         await User.findOne({"email" : email}, async function(err,results){
@@ -79,7 +83,7 @@ async function registerUser (req,res) {
                 let user = await User.create(userObj);
                     let result = {
                         status : "success",
-                        data : "User sucessfully Added!!"
+                        data : "User successfully Added!!"
                     }
 
                     let fName = req.body.fName;
@@ -89,10 +93,11 @@ async function registerUser (req,res) {
                     let path = "";
                     let password = "";
 
-                    getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path), password;
-
-                    let user_ID = user && user._id;
-                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+                    getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, password);
+                    let actedBy = req.user.payload.user.fName;
+                    let actedOn = fName;
+                    let userID = user && user._id;
+                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}}); 
 
                     res.status(200).json(result);
                 }).catch(error => {
@@ -122,7 +127,7 @@ async function verifyuser (req,res) {
             let path =user.path;
             let password = ""
 
-            await User.updateOne({"confirmationCode" : req.params.confirmationCode}, {$set : { "status" : "Active" }});
+            await User.updateOne({"confirmationCode" : req.params.confirmationCode}, {$set : { "status" : "Active" , "verification.emailConfirmation" : "Confirmed"}});
 
             getMailThroughNodeMailer( fName, email, confirmationCode = "", html, filename, path, password );
             res.sendFile("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/index.html");
@@ -138,7 +143,7 @@ async function mailConfirm (req, res){
     let { email } = req.body;
     try {
         let mailconfirm = await User.findOne({ "email" : email});
-        if(mailconfirm.status == 'Pending'){
+        if(mailconfirm.status == 'Created'){
             res.status(400).json({ message : "mail is not been verified!!"})
         }else{
             if(mailconfirm.password == ''){
@@ -158,22 +163,22 @@ async function mailConfirm (req, res){
 
 //Create password for new user
 async function passwordCreate (req,res){
-    let { password } = req.body;
+    let { password, relevantData } = req.body;
     let action = "Created Password";
     
-
     //Current date and time.
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
+
     try {
         //Encrypted the password created 
         const salt = await bcrypt.genSalt(5);
         password = await bcrypt.hash(password, salt);
         let user =  await User.findOneAndUpdate({_id : req.params.userID},{
             $set : { "password" : password},
-            $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}
+            $push : {user_activities: [{"Action" : action, "date" : date}]}
         });
-
+        let getRole = user.role;
+        let role = await Role.findOne({ "roleName" :  getRole});
         //Creating token.
         let token = createToken(user);
             const result = {
@@ -182,10 +187,15 @@ async function passwordCreate (req,res){
                     token : token,
                     userId : user._id,
                     role : user.role,
-                    userStatus : user.status
+                    userStatus : user.status,
+                    featureList : role.featureList
                 } 
             }
-        res.status(200).json(result);   
+            let userID = user.userID;
+            let usercode = user.userCode;
+            let actedBy = user.fName;
+            await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
+            res.status(200).json(result);   
     }catch (error) {
         console.log(error);
         res.status(400).json({ message : "Password is not created please contact admin."});
@@ -196,36 +206,33 @@ async function passwordCreate (req,res){
 //Forget password.
 async function forgetPassword (req,res) {
     let { email } = req.body;
+    let timeAtWhichOtpCreated = new Date();
+    let timeAtWhichOtpExpires = new Date();
+    timeAtWhichOtpExpires = timeAtWhichOtpExpires.setMinutes( timeAtWhichOtpCreated.getMinutes() + 5 );
 
     //Generating conformation code.
-    const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const characters = '0123456789';
     let otp = '';
     for (let i = 0; i < 6; i++) {
         otp += characters[Math.floor(Math.random() * characters.length )];
     }
 
-    // let timeOut = setTimeout(120000, async function(){
-    //     await User.findOneAndUpdate({"email" : email}, {$set});
-    //     console.log('Request has timed out.');
-    // });
     try {
         let result = await User.findOne({ "email" : email});
         let getEmail =result.email;
-        //let fName = ;
-        // const salt = await bcrypt.genSalt(5);
-        // let Password = await bcrypt.hash(password, salt);
         if (result == null) {
             res.status(400).json({message : "The email you have entered is wrong!!!"})
         } else {
             let fName = result.fName;
-            email = "";
+            email = ""; 
             let confirmationCode = "";
             let html = "forget password";
             let filename= "";
             let path = "";
 
             getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp);
-            await User.findOneAndUpdate({"email" : getEmail}, {$set : {"otp" : otp}});
+            await User.findOneAndUpdate({ "email" : getEmail }, { $set : { "otp" : {"code" : otp, "expires_at" : timeAtWhichOtpExpires} }});
+
             res.status(200).json({ message : "Otp have been send to your registered mail!! please check it."}); 
         }
     } catch (error) {
@@ -234,17 +241,46 @@ async function forgetPassword (req,res) {
     }
 };
 
-// //Opt validation
-// async function otpValidation (req,res){
-//     let { otp } = req.body;
-
-//     try {
-//         let checkOtp = await User.findOne({"otp" : otp})
-//         if(opt === null || )
-//     } catch (error) {
+//Otp validation
+async function otpValidation (req,res){
+    let { code } = req.body;
+    let timeAtWhichOptVerify = new Date();
+    timeAtWhichOptVerify = timeAtWhichOptVerify.setMinutes( timeAtWhichOptVerify.getMinutes() );
         
-//     }
-    
+    try {
+        let checkOtp = await User.findOne({"otp.code" : code})
+        if(checkOtp == null){
+            res.status(400).json({ message : "You entered wrong otp!! please try again"}); 
+        }else{
+            if( timeAtWhichOptVerify >  checkOtp.otp.expires_at ){
+                res.status(400).json({ message : "Otp expires!! please resend the otp again!!"}); 
+            }else{
+                res.status(200).json({ message : "Otp sucessfully matched!!"}); 
+            }
+        }
+    } catch (error) {  
+        console.log(error);
+        res.status(400).json(error);
+    }
+}
+
+//Change password after otp generation.
+async function resetPasswordAfterOtpGeneration (req,res) {
+    let { password } = req.body;
+    try {
+        let getEmail = await User.findOne({"email" : req.params.email});
+        if(getEmail == null){
+            res.status(400).json({ message : "This user is not present"});
+        }else{
+            const salt = await bcrypt.genSalt(5);
+            password = await bcrypt.hash(password, salt);
+            await User.findOneAndUpdate({"email" : req.params.email}, {$set : {"password" : password}});
+            res.status(200).json({ message : "Sucessfully changed the password!!!"});
+        }
+    } catch (error) {
+       console.log("error --- > ",error);
+       res.status(400).json({ message : "Please contact admin!!!"});
+    }
 }
 
 //Get all user details.
@@ -276,49 +312,67 @@ async function getFilterdUser (req,res) {
 
 //Get all registered user by id.
 async function getUserById (req,res) {
+    let user = req.params.userID;
     try{
-        let uniqueUser = await User.findOne({ _id : req.params.userID});
-        res.json(uniqueUser);
+        let uniqueUser = await User.findOne({ _id : user});
+        let output = [];
+        let getProjectDetails = await Project.find({"members._id" : user});
+
+        getProjectDetails.forEach(function(r,i){
+            let projectObj = Object.assign({},{projectCode:r.projectCode,nameOfProject:r.nameOfProject,status:r.status,startDate:r.startDate,endDate:r.endDate});
+            output.push(projectObj);
+        });
+        let result = {
+            userData: {
+                "userCode" : uniqueUser.userCode,
+                "fName" : uniqueUser.fName,
+                "lName" : uniqueUser.lName,
+                "email" : uniqueUser.email,
+                "role" : uniqueUser.role,
+                "date" : uniqueUser.date,
+                "status" : uniqueUser.status,
+                "address" : uniqueUser.address,
+                "phone" : uniqueUser.phone
+            },
+            projectData : output   
+        }
+        res.json(result);
     }catch (err) {
         console.log(err);
         res.json({ message : err});
     }
 };
 
-//Update user status blocked.
-async function updateStatusBlock (req,res) {
-    let { status } = req.body;
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
-    let action = "User has been Blocked!!!";
-    try {
-        await User.updateOne(
-            {_id : req.params.userID},
-            {$set : {"status" : status}});
-            
-            let user_ID = req.user.payload.userId;
-            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
-        res.json({ message : "User sucessfully blocked!!!"});    
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ message : error });
-    }
-}
+//Update user status.
+async function updateStatus (req,res) {
+    let { status, relevantData, reasonForBlock } = req.body;
+    let userID = req.user.payload.userId;
+    let date = new Date();
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let userid = req.params.userID;
+    let action;
+    let actedOn;
 
-//Update user status Active.
-async function updateStatusActive (req,res) {
-    let { status } = req.body;
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
-    let user_ID = req.user.payload.userId;
-    let action = "User Active!!!";
     try {
-        await User.updateOne(
-            {_id : req.params.userID},
-            {$set : {"status" : status}});
-            
-            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
-            res.json({ message : "User sucessfully unblocked!!!"});     
+        let user = await User.findOne({"_id" : userid})
+        if (status == "Active"){
+            action = "User has been unblocked!!";
+            await User.updateOne(
+                {_id : userid},
+                {$set : {"status" : "Active", "reasonForBlock" : null}});
+            actedOn =user.fName;    
+            res.json({ message : "User sucessfully active!!"});    
+        }
+        if (status == "Blocked"){
+            action = "User has been blocked!!";
+            await User.updateOne(
+                {_id : userid},
+                {$set : {"status" : "Blocked", "reasonForBlock" : reasonForBlock}});
+            actedOn =user.fName;    
+            res.json({ message : "User have been blocked!!!"});  
+        }
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}});           
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -328,18 +382,36 @@ async function updateStatusActive (req,res) {
 //Update user by id.
 async function updateUserById (req,res) {
     let user = req.body;
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
-    let action = "Updated user";
-    let user_ID = req.user.payload.userId;
+    let date = new Date();
+    let action1 = "Updated user itself";
+    let action2 = "Updated user";
+    let { relevantData } = req.body;
+    let userID = req.user.payload.userId;
+    let usercode = req.user.payload.user.userCode;
+    let actedBy = req.user.payload.user.fName; 
+    let userid = req.params.userID
 
-    try{
-      await User.updateOne(
-        {_id : req.params.userID},
-        {$set : user}
-        );
-         
-         await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
+    try{ 
+    let users = await User.findOne({_id : userID});
+      if(userid == "" || userid == userID){
+        modifiedBy = actedBy;
+        modifiedOn = date;  
+        await User.findOneAndUpdate(
+            {_id : userID},
+            {$set : user, modifiedBy, modifiedOn}
+          );
+          await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action1, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action1)}]}});      
+        }else{
+        await User.findOneAndUpdate(
+            {_id : userid},
+            {$set : user}
+          );
+          let actedOn = users.fName;
+          users["modifiedBy"] = actedBy;
+          users["modifiedOn"] = date;
+          await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action2, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action2, actedOn)}]}});      
+        }  
+     
      res.json({ message : "Updated user!!!"});
     }catch (err) {
        console.log(err);
@@ -349,14 +421,19 @@ async function updateUserById (req,res) {
 
 //Remove user by id.
 async function removeUserById (req,res) {
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
+    let { relevantData } = req.body;
     let action = "Deleted user";
-    let user_ID = req.user.payload.userId;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let userid = req.params.userID
     try{
-        await User.remove({_id: req.params.userID});
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
+        let findUser = await User.findOne({ "_id" : userid});
+        let actedOn = findUser.fName;
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}});        
         res.json({ message : "Deleted user!!!"});
+        await User.remove({"_id" : userid});
     }catch (err) {
         console.log(err);
         res.json({ message : err});
@@ -367,33 +444,32 @@ async function removeUserById (req,res) {
 //Logout route
 async function logout (req,res) {
     //Current date and time.
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Logout";
-    let user_ID = req.user.payload.userId;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let { relevantData } = req.body;
 
     try {
-        await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});  
+        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
         res.status(200).json({ message : "Logout Sucessfull"});
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : "Logout failed.."});
     }
-}
+};
 
 //Get log details by it. 
 async function logDetails (req,res) {
     try {
         let logDetails = await Log.find({ UserID : req.params.userID});
-        console.log("logDetails --- > ",logDetails);
         res.status(200).json(logDetails);
     } catch (error) {
        console.log(error);
        res.status(400).json({ message : "The given log details are not available."});
     }
-}
-
-
+};
 
 //Get all the log details.
 async function logAllDetails (req,res) {
@@ -404,11 +480,11 @@ async function logAllDetails (req,res) {
         console.log(error);
         res.status(400).json({ message : "request cannot be completed"});
     }
-}
+};
 
 // Login method for user.
 async function login (req,res) {
-    let { email, password } = req.body;
+    let { email, password, relevantData } = req.body;
     const action = "Login";
     //validate given inputs, check email and password. 
     try{
@@ -419,53 +495,61 @@ async function login (req,res) {
             return res.status(400).json({errorCode:"10002",message:"Invalid Password format, please try again"});
         }else {
         let user = await User.findOne({email: email});
-
-        //Current date and time.
-        let date = new Date().toLocaleDateString();
-        let time = new Date().toLocaleTimeString();
-        
-        //Check status.
-        if (user.status == "Active") {
-        //Getting UserID.
-        let user_ID = user && user._id;
-
-        if(user){
-            //Password Authentication.
-            let auth = await bcrypt.compare(password, user.password);
-
-            if(auth) {
-                //Creating token.
-                let token = createToken(user);
-                const result = {
-                    status : "success",
-                    data: {
-                        token : token,
-                        userId : user._id,
-                        role : user.role,
-                        userStatus : user.status
-                    } 
+        if(user != null){
+            let usercode = user.userCode;
+            let actedBy = user.fName;    
+            //Current date and time.
+            let date = new Date();
+            
+            //Check status.
+            if (user.status == "Active") {
+            //Getting UserID.
+            let userID = user && user._id; 
+    
+            if(user){
+                let getRole = user.role;
+                console.log("getRole --- > ",getRole);
+                let role = await Role.findOne({ "roleName" :  getRole});
+                console.log("role --- > ",role);
+                //Password Authentication.
+                let auth = await bcrypt.compare(password, user.password);
+                if(auth) {
+                    //Creating token.
+                    let token = createToken(user);
+                    const result = {
+                        status : "success",
+                        data: {
+                            token : token,
+                            userId : user._id,
+                            role : user.role,
+                            userStatus : user.status,
+                            featureList : role.featureList
+                        } 
+                    }
+                    let check = await Log.findOne({"UserID" : userID});
+                        if(check == null){
+                            await Log.create({ user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}], "UserID": userID});
+                        }else{
+                            await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+                        }
+                        res.status(200).json(result);
+                }else {
+                    res.status(400).json({ message : "Password incorrect"});
                 }
-                let check = await Log.findOne({"UserID" : user_ID});
-                if(check == null){
-                    await Log.create({ user_activities: [{"Action" : action, "date" : date, "time" : time}], "UserID": user_ID});
-                }else{
-                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}}); 
-                }
-                res.status(200).json(result);
-            }else {
-                res.status(400).json({ message : "Password incorrect"});
+            }else{
+                res.status(400).json({ message : "Email incorrect"});
+            }
+            }else if(user.status == "Pending"){
+                    res.status(400).json({message : "Pending Account. Please Verify Your Email!"});
+            }else if(user.status == "Blocked"){
+                    res.status(400).json({message : "Your Account is Blocked. Please contact admin!"});
+            }else{
+                    res.status(400).json({message : "Unauthorized. Please contact admin!"});
             }
         }else{
-            res.status(400).json({ message : "Email incorrect"});
+            res.status(400).json({ message : "user is not present!!"});
         }
-        }else if(user.status == "Pending"){
-                res.status(400).json({message : "Pending Account. Please Verify Your Email!"});
-        }else if(user.status == "Blocked"){
-                res.status(400).json({message : "Your Account is Blocked. Please contact admin!"});
-        }else{
-                res.status(400).json({message : "Unauthorized. Please contact admin!"});
-        }
-    }
+      }
     }catch (err) {
         console.log(err);
     }
@@ -497,16 +581,17 @@ async function dashboad (req,res) {
         console.log(error);
         res.status(400).json({ message : "The required dashboard details is not available"});
     }
-}
+};
 
-//Adding update password
+//Adding update password    
 async function updatePassword (req, res){
-    let { Password, newPassword } = req.body;
-    let user_ID = req.user.payload.userId;
+    let { Password, newPassword, relevantData} = req.body;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
 
     //Current date and time.
-    let date = new Date().toLocaleDateString();
-    let time = new Date().toLocaleTimeString();
+    let date = new Date();
     let action = "Password updated";
 
     try {
@@ -521,8 +606,7 @@ async function updatePassword (req, res){
                     //Updating new password.
                     await users.updateOne({ password : newPassword});
 
-                    await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"Action" : action, "date" : date, "time" : time}]}});
-
+                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});
                     res.status(200).json({ message : "Sucessfully Changed the password"}); 
                 }else{
                     res.status(400).json({ message : "Please enter another password"});
@@ -534,7 +618,7 @@ async function updatePassword (req, res){
             console.log(error);
             res.status(400).json({ message : "Please enter valid password!!"});
     }
-}
+};
 
 module.exports = {
     registerUser : registerUser,
@@ -542,11 +626,12 @@ module.exports = {
     mailConfirm : mailConfirm,
     passwordCreate : passwordCreate,
     forgetPassword : forgetPassword,
+    otpValidation : otpValidation,
+    resetPasswordAfterOtpGeneration : resetPasswordAfterOtpGeneration,
     verifyuser : verifyuser,
     getFilterdUser : getFilterdUser,
     getUserById : getUserById,  
-    updateStatusBlock : updateStatusBlock,
-    updateStatusActive : updateStatusActive,
+    updateStatus : updateStatus,
     updateUserById : updateUserById,
     removeUserById : removeUserById,
     login : login,

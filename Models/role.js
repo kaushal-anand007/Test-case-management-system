@@ -26,7 +26,7 @@ const roleSchema = new mongoose.Schema({
     },
 
     createdOn : {
-        type : String
+        type : Date
     },
 
     modifiedBy : {
@@ -34,7 +34,12 @@ const roleSchema = new mongoose.Schema({
     },
 
     modifiedOn : {
-        type : String
+        type : Date
+    },
+
+    status : {
+        type : String,
+        enum : ['Active', 'Inactive']
     }
 });
 

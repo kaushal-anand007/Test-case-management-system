@@ -1,10 +1,11 @@
-const Role = require('../Models/role')
+const Role = require('../Models/role');
+const User = require('../Models/user');
 
 async function getFeatureAccess(req, res, next){
     try {
         let features = await Role.findOne({ "roleName" : req.user.payload.user.role});
         if(features == null){
-            res.status(400).json({ message : "The role provided is not present!!!"});
+            res.status(400).json({ message : "The role is not present!!!"});
         }else{
             let getFeature;
             let getModule;
@@ -20,7 +21,7 @@ async function getFeatureAccess(req, res, next){
             feature = route.slice(index+1,lastIndex);
 
             for(let i = 0;i<features.featureList.length;i++){
-                getFeature = features.featureList[i].featureName;
+                getFeature = features.featureList[i].featureName; 
                 getModule = features.featureList[i].moduleName;
                 if( getFeature === feature && getModule === module){
                     flag = true;
@@ -31,7 +32,7 @@ async function getFeatureAccess(req, res, next){
                 next()
             } else {
                 res.status(400).json({ message : "you are unauthorized!!! please contact admin."}); 
-            }  
+          }  
         }    
     } catch (err){
         res.status(400).json({ message : "please contact admin."}); 

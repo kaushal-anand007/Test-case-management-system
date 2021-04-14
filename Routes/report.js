@@ -19,4 +19,7 @@ router.put('/update/:reportID', verifyAccessTokenForUserId, getFeatureAccess, Re
 //Delete report details.
 router.delete('/remove/:reportID', verifyAccessTokenForUserId, getFeatureAccess, ReportController.deleteReportDetails);
 
+//route to get PDF.
+router.get('/getPdf/:reportID', verifyAccessTokenForUserId, ReportController.generatePdf);
+
 module.exports =router;

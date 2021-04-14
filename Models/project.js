@@ -2,6 +2,10 @@ const mongoose=require('mongoose');
 
 //Schema for Project.
 const projectSchema=new mongoose.Schema({
+    projectCode : {
+        type : String
+    },
+
     nameOfProject : {
         type : String
     },
@@ -17,42 +21,42 @@ const projectSchema=new mongoose.Schema({
     },
 
     members : [{
-        _id : { type : String},
-        fName : { type : String},
-        lName : { type : String}
+        _id : { type : String },
+        fName : { type : String },
+        lName : { type : String }
     }],
 
     startDate : {
-        type : String
+        type : Date
     },
 
     endDate : {
+        type : Date
+    },
+
+    userID : {
         type : String
     },
 
-    runLog : [{
-        runLogCount : {
+    scenario : [{
+        title : {
             type : String
         },
 
-        testCasePassed : {
+        createdBy : {
             type : String
         },
-
-        testCaseFailed : {
-            type : String
-        },
-
-        comment : {
-            type : String
-        },
-
-        imageOrAttachment : {
-            type: String
+    
+        createdOn : {
+            type : Date
         }
     }],
 
     testCase : [{
+        testCaseCode : {
+            type : String 
+        },
+        
         title : {
             type : String
         },
@@ -66,7 +70,8 @@ const projectSchema=new mongoose.Schema({
         },
 
         status : {
-            type : String
+            type : String,
+            enum : ['Active', 'Inactive']
         },
 
         assignedTo : { 
@@ -74,19 +79,103 @@ const projectSchema=new mongoose.Schema({
             fName : { type : String},
             lName : { type : String}
         },
-    }],
+
+        createdBy : {
+            type : String
+        },
     
-    date : {
-       type : String
+        createdOn : {
+            type : Date
+        },
+    
+        modifiedBy : {
+            type : String
+        },
+    
+        modifiedOn : {
+            type : Date
+        },
+    }],
+
+    runLog : [{
+        runLogCode : {
+            type : String
+        },
+
+        runLogCount : {
+            type : Number
+        },
+
+        testCasePassed : {
+            type : Number
+        },
+
+        testCaseFailed : {
+            type : Number
+        },
+
+        testCaseList : {
+            type : String
+        },
+
+        comment : {
+            type : String
+        },
+
+        imageOrAttachment : {
+            type: String
+        },
+
+        filename : {
+            type : String
+        },
+
+        pdfFileName : {
+            type : String
+        },
+
+        status : {
+            type : String,
+            enum : ['pending', 'progress', 'complete', 'rejected']
+        },
+
+        createdBy : {
+            type : String
+        },
+    
+        createdOn : {
+            type : Date
+        },
+    
+        modifiedBy : {
+            type : String
+        },
+    
+        modifiedOn : {
+            type : Date
+        },
+    }],
+
+    status : {
+        type : String,
+        enum : ['Active', 'Inactive']
     },
 
-    time : {
+    createdBy : {
         type : String
     },
 
-    featureData : {
+    createdOn : {
+        type : Date
+    },
+
+    modifiedBy : {
         type : String
-    }
+    },
+
+    modifiedOn : {
+        type : Date
+    },
 }); 
 
 module.exports = mongoose.model('Project', projectSchema);

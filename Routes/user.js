@@ -13,7 +13,7 @@ router.post('/login', UserController.login);
 router.get('/logout', verifyAccessTokenForUserId, UserController.logout);
 
 //Submiting a user.
-router.post('/add/', verifyAccessTokenForUserId , getFeatureAccess, UserController.registerUser);
+router.post('/add/' , verifyAccessTokenForUserId, UserController.registerUser);
 
 //Email confirmation.
 router.get('/confirm/:confirmationCode', UserController.verifyuser);
@@ -25,7 +25,13 @@ router.post('/mail-confirm', UserController.mailConfirm);
 router.post('/password-create/:userID', UserController.passwordCreate);
 
 //Forget password.
-router.post('/forget-password/:userID', UserController.forgetPassword);
+router.post('/forget-password', UserController.forgetPassword);
+
+//Otp validation.
+router.post('/otp-validation', UserController.otpValidation);
+
+//Reset password after otp generation.
+router.post('/reset-password/:email',UserController.resetPasswordAfterOtpGeneration);
 
 //Get dashboad.
 router.get('/dashboard/', verifyAccessTokenForUserId, getFeatureAccess, UserController.dashboad);
@@ -37,7 +43,7 @@ router.get('/log/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserCon
 router.get('/logs/', verifyAccessTokenForUserId, getFeatureAccess, UserController.logAllDetails);
 
 //Change password.
-router.post('/change-password/', verifyAccessTokenForUserId, getFeatureAccess, UserController.updatePassword);
+router.post('/change-password/:userID', verifyAccessTokenForUserId, UserController.updatePassword);
 
 //Get all registered user.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, paginationResults(User), UserController.getRegisteredUser);
@@ -52,12 +58,9 @@ router.get('/get/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserCon
 router.put('/update/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.updateUserById);
 
 //Update user to make it Block.
-router.put('/block/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.updateStatusBlock);
-
-//Update user to make it Active.
-router.put('/unblock/:userID', verifyAccessTokenForUserId, UserController.updateStatusActive);
+router.put('/status/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.updateStatus);
 
 //Deleting specific post.
-router.delete('/remove/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.removeUserById);
+router.delete('/remove/:userID', verifyAccessTokenForUserId, UserController.removeUserById);
 
 module.exports =router;
