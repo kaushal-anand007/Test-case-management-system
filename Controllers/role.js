@@ -23,7 +23,7 @@ function getNextSequenceValue(sequenceName){
 };
   
 //Function to post role details.
-async function postRoleInfo (req,res) {
+async function postRole (req,res) {
     let date = new Date();
     let action = "Added role";
     let userID = req.user.payload.userId;
@@ -49,7 +49,7 @@ async function postRoleInfo (req,res) {
                             status : "success",
                                 data : "Role sucessfully Added!!"
                                   }
-                                  await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});                                
+                                  await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});                                
                                   res.status(200).json(result);
                            }
                         });   
@@ -64,9 +64,9 @@ async function postRoleInfo (req,res) {
 }
 
 //Function to get list of all role details.
-async function getRoleInfo (req,res) {
+async function getRole (req,res) {
     try {
-        let getRoles = await Role.find().sort({_id : -1});
+        let getRoles = await Role.find({"condition" : "Active"}).sort({_id : -1});
         res.status(200).json(getRoles)
     } catch (error) {
         console.log(error);
@@ -75,7 +75,7 @@ async function getRoleInfo (req,res) {
 }
 
 //Function to get role details by id.
-async function getRoleInfoById (req,res) {
+async function getRoleById (req,res) {
     try {
         let roleInfoById = await Role.findOne({_id : req.params.roleID});
         res.status(200).json(roleInfoById);
@@ -86,29 +86,37 @@ async function getRoleInfoById (req,res) {
 }
 
 //Function to update role detail by id.
-async function updateRoleInfo (req,res) {
+async function updateRole (req,res) {
     let date = new Date();
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    console.log("actedBy --- > ",actedBy);
     let action = "Updated role";
     let { roleName, featureList, relevantData} = req.body;
     try {
-        let role = await Role.findByIdAndUpdate(
-            {_id : req.params.roleID},
-            {$set : {roleName, "modifiedBy" : actedBy, "modifiedOn" : date}, $addToSet : {"featureList" : featureList }}
-           // { upsert: true,new: true}
+        let setQuery = {};
+
+        if(featureList){
+            setQuery["featureList"] = featureList;
+        }
+        if(roleName){
+            setQuery["roleName"] = roleName;
+        }
+        if(actedBy){
+            setQuery["modifiedBy"] = actedBy;
+        }
+        if(date){
+            setQuery["modifiedOn"] = date;
+        }
+
+        console.log("setQuery --- > ",setQuery);
+        console.log("req.params.roleID --- > ",req.params.roleID);
+        let role = Role.findOne({"_id" : req.params.roleID});
+        await Role.findOneAndUpdate(
+            {"_id" : req.params.roleID},
+            {$set : setQuery}
         );
-        // let role = await Role.findOneAndUpdate(
-        //     {_id : req.params.roleID},
-        //     {$addToSet : {"featureList" : featureList }},
-        //     { upsert: true,new: true}
-        // )
         let rolecode = role.roleCode;
-        console.log("rolecode --- > ",rolecode);
-        console.log("userID --- > ",userID);
-        let test = await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});  
-        console.log("test --- > ", test);      
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});       
         res.status(200).json({message : "Successfully updated role"});
     } catch (error) {
         console.log(error);
@@ -117,7 +125,7 @@ async function updateRoleInfo (req,res) {
 }
 
 //FUnction to delete role details.
-async function deleteRoleInfo (req,res) {
+async function deleteRole (req,res) {
     let date = new Date();
     let action = "Deleted role";
     let { relevantData } = req.body;
@@ -126,8 +134,10 @@ async function deleteRoleInfo (req,res) {
     let roleID = req.params.roleID
     try { 
         let role = await Role.findOne({"_id" : roleID});
+        await Role.deleteOne({"_id" : roleID});
         let rolecode = role.roleCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});  
+        let actedOn = role.roleName;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});  
         await Role.remove({_id : roleID});
         res.status(200).json({message : "Successfully deleted role"});
     } catch (error) {
@@ -136,11 +146,40 @@ async function deleteRoleInfo (req,res) {
     }
 }
 
+async function changeRoleCondition (req,res) {
+    let date = new Date();
+    let { condition, relevantData } = req.body;
+    let roleid = req.params.roleID;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let action;
+
+    if(condition == "Active"){
+        action = "The role Activated"
+    }
+    if(condition == "Inactive"){
+        acttion = "The role Inactived"
+    }
+
+    try {
+        let roleData = await Role.findOne({"_id" : roleid});
+        await Role.findOneAndUpdate({"_id" : roleid}, {$set : { "condition" : condition }});
+        let actedOn = roleData.roleName;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Changed role status!"});
+    } catch (error) {
+        console.log("error --- > ",error);
+        res.status(400).json({message : error});
+    }
+}
+
 module.exports = {
-    postRoleInfo : postRoleInfo,
-    getRoleInfo : getRoleInfo,
-    getRoleInfoById : getRoleInfoById,
-    updateRoleInfo : updateRoleInfo,
-    deleteRoleInfo : deleteRoleInfo
+    postRole : postRole,
+    getRole : getRole,
+    getRoleById : getRoleById,
+    updateRole : updateRole,
+    deleteRole : deleteRole,
+    changeRoleCondition : changeRoleCondition
 }
 

@@ -73,6 +73,12 @@ const reportSchema = new mongoose.Schema({
     modifiedOn : {
         type : Date
     },
+
+    condition : {
+        type : String,
+        default : 'Active',
+        enum : ['Active', 'Inactive']
+    }
 });
 
 module.exports = mongoose.model('Report', reportSchema );

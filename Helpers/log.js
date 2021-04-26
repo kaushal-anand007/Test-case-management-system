@@ -23,9 +23,15 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "Updated user":
                     result = `${actedBy} updated ${actedOn} at ${date}`
                     break;
-                case "Deleted user":
-                    result = `${actedOn} deleted by ${actedBy} at ${date}`
+                case "The User Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
+                case "The User Inactived":
+                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                    break;
+                case "Deleted user":
+                    result = `${actedBy} deleted user ${actedOn} at ${date}`
+                    break;        
                 case "Logout":
                     result = `${actedBy} logout at ${date}`
                     break;
@@ -41,19 +47,31 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "Updated role":
                     result = `${actedBy} updated role at ${date}`
                     break;
-                case "Deleted role":
-                    result = `${actedBy} deleted role at ${date}`
+                case "The role Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
+                case "The role Inactived":
+                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                    break; 
+                case "Deleted role":
+                    result = `${actedBy} deleted role ${actedOn} at ${date}`
+                    break;     
                 case "Added Feature":
                     result = `${actedBy} added feature at ${date}`
                     break;
                 case "Updated Feature":
                     result = `${actedBy} updated feature at ${date}`
                     break;
-                case "Deleted Feature":
-                    result = `${actedBy} deleted feature at ${date}`
+                case "The feature Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "Added project details":
+                case "The feature Inactived":
+                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                    break;     
+                case "Deleted Feature":
+                    result = `${actedBy} deleted feature ${actedOn} at ${date}`
+                    break;
+                case "Added project":
                     result = `${actedBy} added project at ${date}`
                     break;
                 case "Added scenario":
@@ -64,19 +82,28 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                     break;
                 case "Added run log":
                     result = `${actedBy} added run log at ${date}`
-                    break;
-                case "Updated project details":
-                    result = `${actedBy} upadted project details at ${date}`
-                    break;
-                case "Updated test Case":
-                    result = `${actedBy} updated test cases at ${date}`
-                    break;
-                case "Updated run log":
-                    result = `${actedBy} updated run log at ${date}`
                     break;  
+                case "Updated project":
+                    result = `${actedBy} upadted project details at ${date}`
+                    break;      
+                case "Updated test Case":
+                    result = `${actedBy} added test case at ${date}`
+                    break;    
+                case "Updated run log":
+                    result = `${actedBy} added test case at ${date}`
+                    break; 
+                case "Generated pdf of run log and send it to mail":
+                    result = `${actedBy} added test case at ${date}`
+                    break;             
                 case "Deleted Project":
-                    result = `${actedBy} deleted project at ${date}`
+                    result = `${actedBy} deleted project ${actedOn} at ${date}`
                     break;
+                case "The project Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
+                    break;
+                case "The project Inactived":
+                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                    break;    
                 case "Added Report":
                     result = `${actedBy} added report at ${date}`
                     break;
@@ -88,6 +115,12 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                     break;                                              
                 default:
                     break;
+                case "The report Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
+                    break;
+                case "The report Inactived":
+                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                break;    
             }
             return result;
         } catch (error) {

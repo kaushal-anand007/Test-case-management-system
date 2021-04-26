@@ -27,12 +27,12 @@ async function postFeature (req,res){
     let action = "Added Feature";       
     let userID = req.user.payload.userId; 
     let actedBy = req.user.payload.user.fName;
-    let { featureName,  createdBy, moduleName, relevantData} = req.body; 
+    let { featureName,  createdBy, moduleName, decription, relevantData} = req.body; 
 
     try {
         getNextSequenceValue("featureCode").then(data=>{
             let featurecode = 'F'+ data;
-            let featureObj = {  featureCode: featurecode, featureName, createdBy, createdOn : date, moduleName, "createdBy" : actedBy, "createdOn" : date};
+            let featureObj = {  "featureCode" : featurecode, featureName, decription, createdBy, createdOn : date, moduleName, "createdBy" : actedBy, "createdOn" : date};
             if( featureName == "" || createdBy == "" || moduleName == null){
                 return res.json({ message : "Please fill all the fields!!!"})
             }else{
@@ -65,7 +65,7 @@ async function postFeature (req,res){
 //Function to get list of feature details.
 async function getFeature (req,res) {
     try {
-        let feature = await Feature.find();
+        let feature = await Feature.find({"condition" : "Active"});
         res.status(200).json(feature);
     } catch (error) {
         console.log(error);
@@ -91,11 +91,11 @@ async function updateFeature (req,res) {
     let action = "Updated Feature";
     let userID = req.user.payload.userId; 
     let actedBy = req.user.payload.user.fName;
-    let { featureName, moduleName, relevantData} = req.body;
+    let { featureName, moduleName, decription, relevantData} = req.body;
     try {
         let feature = await Feature.updateOne(
             {_id : req.params.featureID},
-            {$set : { "featureName" : featureName, "moduleName" : moduleName ,"modifiedBy" : actedBy, "modifiedOn" : date} }
+            {$set : { "featureName" : featureName, "moduleName" : moduleName , "decription" : decription, "modifiedBy" : actedBy, "modifiedOn" : date} }
         );
         let featurecode = feature.featureCode;
         await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
@@ -106,7 +106,7 @@ async function updateFeature (req,res) {
     }
 }
 
-//Function to delete the feature details.
+//Function to delete the feature.
 async function deleteFeature (req,res) {
     let date = new Date();
     let { relevantData } = req.body;
@@ -116,19 +116,51 @@ async function deleteFeature (req,res) {
     let featureID = req.params.featureID;
     try {
         let feature = await Feature.findOne({ _id : featureID });
+        await Feature.deleteOne({ _id : featureID });
         let featurecode = feature.featureCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+        let actedOn = feature.featureName;
+        await Log.findOneAndUpdate({"UserID": userID, "referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
         await Feature.remove({ _id : featureID });  
         res.status(200).json({message : "Successfully deleted feature"});
     } catch (error) {
         console.log(400).json({ message : error });
     }
-}
+};
+
+//Function to change condition of feature.
+async function changeFeatureCondition (req,res) {
+    let date = new Date();
+    let { condition, relevantData } = req.body;
+    let featureid = req.params.featureID;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let action;
+
+    if(condition == "Active"){
+        action = "The feature Activated"
+    }
+    if(condition == "Inactive"){
+        acttion = "The feature Inactived"
+    }
+
+    try {
+        let featureData = await Feature.findOne({"_id" : featureid});
+        await Feature.findOneAndUpdate({ "_id" : featureid }, {$set : { "condition" : condition}});
+        let actedOn = featureData.featureName;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Changed feature status!"});
+    } catch (error) {
+        console.log("error --- > ",error);
+        res.status(400).json({message : error});
+    }
+};
 
 module.exports = {
     postFeature : postFeature,
     getFeature : getFeature,
     getFeatureById : getFeatureById,
     updateFeature : updateFeature,
-    deleteFeature : deleteFeature
+    deleteFeature : deleteFeature,
+    changeFeatureCondition : changeFeatureCondition
 }

@@ -23,7 +23,7 @@ function getNextSequenceValue(sequenceName){
 };
 
 //Function to post the report details.
-async function reportDetails (req,res) {
+async function report (req,res) {
  let date = new Date();
  let action = "Added Report";
  let reportCode;
@@ -49,7 +49,7 @@ async function reportDetails (req,res) {
                         data : "Report sucessfully Added!!"
                     }
 
-                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});                    
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});                    
                     res.status(200).json(result);
                 }).catch(error => {
                     res.status(400).json( { message : error });
@@ -64,9 +64,9 @@ async function reportDetails (req,res) {
 }
 
 //Function to get list of all the report details.
-async function getReportDetails (req,res) {
+async function getReport (req,res) {
     try {
-        let reportDetails = await Report.find();
+        let reportDetails = await Report.find({"condition" : "Active"});
         res.status(200).json(reportDetails);
     } catch (error) {
         console.log(error);
@@ -75,7 +75,7 @@ async function getReportDetails (req,res) {
 }
 
 //Function to get report details.
-async function getReportDetailsById (req,res) {
+async function getReportById (req,res) {
     try {
         let reportDetailById = await Report.findOne({ _id : req.params.reportID});
         res.status(200).json(reportDetailById);
@@ -86,7 +86,7 @@ async function getReportDetailsById (req,res) {
 }
 
 //Function to update report details.
-async function updateReportDetails (req,res) {
+async function updateReport (req,res) {
     let date = new Date();
     let action = "Updated Report";
     let userID = req.user.payload.userId;
@@ -100,7 +100,7 @@ async function updateReportDetails (req,res) {
         updateReport["modifiedBy"] = fname;
         updateReport["modifiedOn"] = date;
         let reportcode = updateReport.reportCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});        
         res.status(200).json({message : "Successfully updated report"});
     } catch (error) {
         console.log(error);
@@ -109,7 +109,7 @@ async function updateReportDetails (req,res) {
 }
 
 //Function to delete the report details.
-async function deleteReportDetails (req,res) {
+async function deleteReport (req,res) {
     let date = new Date();
     let action = "Deleted Report";
     let userID = req.user.payload.userId; 
@@ -118,8 +118,9 @@ async function deleteReportDetails (req,res) {
     try {
         await Report.remove({"_id" : reportID});
         let report = await Report.findOne({"_id" : reportID});
+        await Report.deleteOne({"_id" : reportID});
         let reportcode = report.reportCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : reportcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});        
         res.status(200).json({message : "Successfully deleted report"});
     } catch (error) {
         res.status(400).json({ message : error });
@@ -128,13 +129,14 @@ async function deleteReportDetails (req,res) {
 
 async function generatePdf(req, res) {
     let { filename, pdfFileName } = req.body;
+    let reportID = req.params.reportID;
     try {
-        let Data = await Report.findOne({"_id" : req.params.reportID});
+        let Data = await Report.findOne({"_id" : reportID});
         if (Data.filename == pdfFileName) {
             res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
         } else { 
             convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
-                await Report.findOneAndUpdate({_id : req.params.reportID}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}})
+                await Report.findOneAndUpdate({"_id" : reportID}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}})
                 res.status(200).json({ message : "PDF Generated!"});
             }).catch((error) => {
                 res.status(400).json({ message : "PDF do not Generated!"});
@@ -146,11 +148,40 @@ async function generatePdf(req, res) {
     }
 }
 
+async function changeReportCondition (req,res) {
+    let date = new Date();
+    let { condition, relevantData } = req.body;
+    let reportid = req.params.reportID;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let action;
+
+    if(condition == "Active"){
+        action = "The report Activated"
+    }
+    if(condition == "Inactive"){
+        acttion = "The report Inactived"
+    }
+
+    try {
+        let reportData = await Report.findOne({"_id" : reportid});
+        await Report.findOneAndUpdate({ "_id" : reportid }, {$set : { "condition" : condition}});
+        let actedOn = reportData.reportCode;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Changed report status!"});
+    } catch (error) {
+        console.log("error --- > ",error);
+        res.status(400).json({message : error});
+    }
+};
+
 module.exports = {
-    reportDetails : reportDetails,
-    getReportDetails : getReportDetails,
-    getReportDetailsById : getReportDetailsById,
-    updateReportDetails : updateReportDetails,
-    deleteReportDetails : deleteReportDetails,
-    generatePdf : generatePdf
+    report : report,
+    getReport : getReport,
+    getReportById : getReportById,
+    updateReport : updateReport,
+    deleteReport : deleteReport,
+    generatePdf : generatePdf,
+    changeReportCondition : changeReportCondition
 }

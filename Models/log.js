@@ -2,35 +2,33 @@ const mongoose=require('mongoose');
 
 //Schema for log.
 const logSchema = new mongoose.Schema({
-    UserID : { type : String },
+    UserID : { 
+        type : String 
+    },
+    
+    referenceType : { 
+            type : String 
+        },
 
-    user_activities : [
-        {
-            referenceType : { 
-                type : String 
-            },
+    referenceId : { 
+        type : String 
+         },
 
-            referenceId : { 
-                type : String 
-            },
+    data : { 
+        type : String
+        },
 
-            data : { 
-                type : String
-            },
+    loggedOn : { 
+        type : Date
+        },
 
-            loggedOn : { 
-                type : Date
-            },
+    loggedBy : {
+        type : String
+    },
 
-            loggedBy : {
-                 type : String
-            },
-
-            message : { 
-                type : String
-            }
-        }
-    ]
+    message : { 
+        type : String
+        }    
 });
 
 module.exports =mongoose.model('Log', logSchema);

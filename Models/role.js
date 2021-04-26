@@ -14,6 +14,7 @@ const roleSchema = new mongoose.Schema({
         featureCode : { type : String},
         featureName : { type : String},
         moduleName : {type : String},
+        decription : {type : String},
         status : { type : Boolean, default : true}
     }],
 
@@ -37,8 +38,9 @@ const roleSchema = new mongoose.Schema({
         type : Date
     },
 
-    status : {
+    condition : {
         type : String,
+        default : 'Active',
         enum : ['Active', 'Inactive']
     }
 });

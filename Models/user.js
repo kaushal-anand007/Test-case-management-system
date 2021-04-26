@@ -123,6 +123,12 @@ const userSchema=new mongoose.Schema({
 
     reasonForBlock : {
         type : String
+    },
+
+    condition : {
+        type : String,
+        default : 'Active',
+        enum : ['Active', 'Inactive']
     }
  });
 

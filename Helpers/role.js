@@ -1,5 +1,4 @@
 const Role = require('../Models/role');
-const User = require('../Models/user');
 
 async function getFeatureAccess(req, res, next){
     try {

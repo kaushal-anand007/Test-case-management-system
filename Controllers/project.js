@@ -3,7 +3,11 @@ const mongoose =require('mongoose');
 const Log =require('../Models/log');
 const RoleCounter = require('../Models/counter');
 const toCreateMessageforLog = require('../Helpers/log');
-const User = require('../Models/user');
+const convertHtmlToPdf = require('../Helpers/pdf');
+const RunLog = require('../Models/runlog');
+const TestCase = require('../Models/testcase');
+const Scenario = require('../Models/scenario');
+const { Parser, transforms: { unwind }  } = require('json2csv');
 
 //Function to auto increment the usercode.
 function getNextSequenceValue(sequenceName){
@@ -25,16 +29,15 @@ function getNextSequenceValue(sequenceName){
 //Function to post the project.
 async function postProject (req,res) {
     let date = new Date();
-    let action = "Added project details";
+    let action = "Added project";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    let runLog;
-    let testCase;
-    let scenario;
+    let status;
     
     try {
         let { nameOfProject, handledBy, projectDescription, members, startDate, endDate, relevantData} = req.body;
-        let projectObj = { nameOfProject, handledBy, projectDescription, members, startDate, endDate, runLog, testCase, scenario, "userID" : userID, "createdBy" : actedBy, "createdOn" : date}
+
+        let projectObj = { nameOfProject, handledBy, projectDescription, members, startDate, endDate, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date}
         if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
@@ -53,9 +56,8 @@ async function postProject (req,res) {
                                 message : " Project has sucessfully created "
                             }
                         }
-                        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+                        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         res.status(200).json(result);
-                    
                      }).catch(error => {
                     console.log(error);
                     res.status(400).json( { message : error });
@@ -67,200 +69,77 @@ async function postProject (req,res) {
         console.log(error);
     res.status(400).json({ message : error });
 }
-}
-
-//Function to post scenario.
-async function postScenario (req, res) {
-    let date = new Date();
-    let action = "Added scenario";
-    let userID = req.user.payload.userId;
-    let actedBy = req.user.payload.user.fName;
-    let { title, relevantData } = req.body;
-    let scenarioObj = {title, "createdBy" : actedBy, "createdOn" : date};
-
-    try {
-        let objId = await Project.findOne({ _id : req.params.projectID});
-        await Project.findOneAndUpdate(
-            {_id : objId},
-            {$push :{"scenario" : scenarioObj}}
-        );
-        let projectcode = objId.projectCode
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
-        res.status(200).json({message : "Successfully added Scenario"});
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ message : error});
-    }
-}
-
-//Function to post test case.
-async function postTestCase (req,res){
-    let date = new Date();
-    let action = "Add test Case";
-    let userID = req.user.payload.userId;
-    let actedBy = req.user.payload.user.fName;
-
-    //Getting _id from array inside the db.
-    let objId1 = await Project.findOne({ _id : req.params.projectID});
-    let {title, testDescriptions, attachment, status, assignedTo, relevantData} = req.body;
-    let testCaseObj = {title, testDescriptions, attachment, status, assignedTo, "createdBy" : actedBy, "createdOn" : date};
-
-    if(title == "" || testDescriptions == "" || attachment == "" || status ==  "" || assignedTo == ""){
-        res.json({ message : "Please fill all the details in test case!!!"});
-    }else{
-        try {
-            getNextSequenceValue("testCaseCode").then(async data => {
-                let testcasecode = 'TC'+ data;    
-                testCaseObj.testCaseCode = testcasecode; 
-                let project = await Project.findOneAndUpdate(
-                    {_id : objId1},
-                    {$push :{"testCase": testCaseObj}}
-                );
-                let projectcode = project.projectCode;
-                await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
-                res.status(200).json({message : "Successfully added test case"});
-                     }).catch(error => {
-                console.log(error);
-              res.status(400).json( { message : error });
-            });     
-        } catch (error) {
-            console.log(error);
-            res.status(400).json({ message : error});
-        } 
-    }
-}
-
-//Function to post run log.
-async function postRunLog (req,res) {
-    let date = new Date();
-    let action = "Added run log";
-    let userID = req.user.payload.userId;
-    let actedBy = req.user.payload.user.fName;
-    let { runLogCount, testCasePassed, testCaseFailed, comment, imageOrAttachment, status, relevantData} = req.body;
-
-    try {
-        let runLogObj = { runLogCount, testCasePassed, testCaseFailed, comment, imageOrAttachment, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date};
-
-        //Getting _id from array inside the db.
-        let objId1 = await Project.findOne({ _id : req.params.projectID});
-        if(runLogCount == "" || testCasePassed == "" || testCaseFailed == "" || comment == "" || imageOrAttachment == "" || status == ""){
-            res.json({ message : "Please fill all the fields!!!"});
-        }else{
-            getNextSequenceValue("runLogCode").then(async data => {
-                let runlogcode = 'RL'+ data;    
-                runLogObj.runLogCode = runlogcode;  
-                let project = await Project.findOneAndUpdate(
-                    {_id : objId1},
-                    {$push :{"runLog":runLogObj}}
-                ); 
-                let result = {
-                    status : 'success',
-                    data : {
-                        message : "Successfully added run log!!!"
-                    }
-                }
-                let projectcode = project.projectCode;
-                await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
-                res.status(200).json(result);
-             }).catch(error => {
-            console.log(error);
-            res.status(400).json( { message : error });
-          });    
-        }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ message : error });
-    }
-}
-
-//Generate run log pdf
-async function generatePdf (req, res) {
-    let { filename, pdfFileName, runLogCode } = req.body;
-    let projectId = req.params.projectId;
-    try {
-        let Data = await Project.findOne({"_id" : projectId});
-        if(Data == null){
-            res.status(400).json({ message : "The required project is not present!"})
-        }else{
-            for(let i=0; i< Data.runLog.length; i++){
-                if (runLogCode == Data.runLog[i].runLogCode) {
-                    Data = Data.runLog[i];
-                    let runlogcode = Data.runLogCode;
-                    if (Data.filename == pdfFileName) {
-                        res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
-                    } else { 
-                        convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
-                            await Project.findOneAndUpdate({_id : req.params.projectID, "runLogCode" : runlogcode}, {$set : {"runLog.filename" : filename, "runLog.pdfFileName" : pdfFileName}});
-                            res.status(200).json({ message : "PDF Generated!"});
-                        }).catch((error) => {
-                            res.status(400).json({ message : "PDF do not Generated!"});
-                      });
-                    }
-                }else{
-                    res.status(400).json({ message : "The required run log is not present!"})
-                }
-            }
-        }
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({error});
-    }
-}
-
+};
 
 //Function to list all the project.
 async function getProject (req,res) {
-   try {
-       let result = await Project.find().sort({_id : -1});
-       res.status(200).json(result);
-   } catch (error) {
-       console.log(error);
-       res.status(400).json({ message : error });
-   }
-}
-
-//Function to filted list.
-async function getFilterdProject (req, res) {
-    let filter = {
-        "startDate" : req.body.startDate,
-        "endDate" : req.body.endDate
-    };
-
-    try{
-        let filteredProject = await Project.find(filter);
-        res.json(filteredProject);
-    }catch (err) {
-        console.log(err);
-        res.json({ message : err});
-    }
-}
-
-//Function to get project by id.
-async function getProjectById (req,res) {
     try {
-        let projectById = await Project.find({ _id : req.params.projectID})
-        res.status(200).json(projectById);
+        let result = await Project.find({"condition" : "Active"}).sort({_id : -1});
+        res.status(200).json(result);
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
     }
-}
+ }
+ 
+ //Function to filted list.
+ async function getFilterdProject (req, res) {
+     let filter = {
+         "startDate" : req.body.startDate,
+         "endDate" : req.body.endDate,
+         "condition" : "Active"
+     };
+ 
+     try{
+         let filteredProject = await Project.find(filter);
+         res.json(filteredProject);
+     }catch (err) {
+         console.log(err);
+         res.json({ message : err});
+     }
+ }
+ 
+ //Function to get project by id.
+ async function getProjectById (req,res) {
+     let date = new Date();
+     let projectId = req.params.projectID;
+     let status;
+     try {
+         let project = await Project.findOne({"_id" : projectId});
+         let daterightnow = date;
+         let startdate = project.startDate;
+         let enddate = project.endDate;
+         
+         if(( startdate <= daterightnow) &&  (daterightnow <= enddate) ){
+             status = 'progress';
+         };
+ 
+         if ( daterightnow >= enddate){
+             status = 'pending';
+         };
+ 
+         await Project.findOneAndUpdate({"_id" : projectId}, {$set : {"status" : status}});
+         let projectById = await Project.find({ "_id" : projectId});
+         res.status(200).json(projectById);
+     } catch (error) {
+         console.log(error);
+         res.status(400).json({ message : error });
+     }
+ }
+
 
 //Function to update the project details.
 async function updateProject (req,res) {
     let date = new Date();
-    let action = "Updated project details";
+    let action = "Updated project";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    let { nameOfProject, handledBy, projectDescription , members, startDate, endDate, status, relevantData} = req.body;
-    let projectId = req.params.projectID; 
+    let { nameOfProject, handledBy, projectDescription, members, status, relevantData} = req.body;
+    let projectId = req.params.projectID;
         
     try {
-        //Getting _id from array inside the db.
-        //let objId = await Project.findOne({ _id : req.params.projectID});
-
-        //created object to update the project details.
         let setQuery = {};
+        
         if(nameOfProject) {
             setQuery["nameOfProject"] = nameOfProject;
         }
@@ -270,133 +149,25 @@ async function updateProject (req,res) {
         if(projectDescription) {
             setQuery["projectDescription"] = projectDescription;
         }
-        if(startDate) {
-            setQuery["startDate"] = startDate;
-        }
-        if(endDate) {
-            setQuery["endDate"] = endDate;
-        }
         if(status) {
             setQuery["status"] = status;
         }
 
-        let project = await Project.findOne({"_id" : projectId});
-        project["modifiedBy"] = actedBy;
-        project["modifiedOn"] = date;
-
+        let project = await Project.findOne({ "_id" : projectId })
         await Project.updateOne(
-            {_id : projectId},{$set : setQuery, $addToSet:{"members":members}}
+            { "_id" : projectId },{$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, $addToSet : { "members":members }}
         );
-
+        
         let projectcode = project.projectCode;
 
         console.log("project --- > ",project);
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
         res.status(200).json({ message :"Updated project details"});
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error});
     }
 
-}
-
-//Function to update test case.
-async function updateTestCase (req,res) {
-    let date = new Date();
-    let action = "Updated test Case";
-    let actedBy = req.user.payload.user.fName;
-    let {title, testDescriptions, attachment, status, assignedTo, relevantData} = req.body;
-    let projectId = req.params.projectId;
-    
-    try {
-        let Data = await Project.findOne({"_id" : projectID});
-        if(Data == null){
-            res.status(400).json({ message : "The required project is not present!"})
-        }else{
-            let project = await Project.findOne({"_id" : projectId});
-            project["modifiedBy"] = actedBy;
-            project["modifiedOn"] = date;
-
-            let setQuery = {};
-
-            if(title) {
-                setQuery["testCase.$.title"] = title;
-            }
-            if(testDescriptions) {
-                setQuery["testCase.$.testDescriptions"] = testDescriptions;
-            }
-            if(attachment) {
-                setQuery["testCase.$.attachment"] = attachment;
-            }
-            if(status) {
-                setQuery["testCase.$.status"] = status;
-            }
-            if(assignedTo) {
-                setQuery["testCase.$.assignedTo"] = assignedTo;
-            }
-           
-            await Project.findByIdAndUpdate({"_id" : projectId, "testCaseCode" : title}, {$set : setQuery});
-            let projectcode = project.projectCode;
-            await Log.findOneAndUpdate({"UserID": user_ID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
-            res.status(200).json({ message :"Updated runLog details"});
-        } 
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({error});
-    }
-}
-
-//Function to update run log. 
-async function updateRunLog (req,res) {
-    let date = new Date();
-    let userID = req.user.payload.userId;
-    let { runLogCode, runLogCount, testCasePassed, testCaseFailed, comment, imageOrAttachment, status, relevantData } = req.body;
-    console.log("req.body --- > ",req.body);
-    let action = "Updated run log";
-    let actedBy = req.user.payload.user.fName;
-    let projectId = req.params.projectID;
-
-    try {
-        let Data = await Project.findOne({"_id" : projectId});
-        //let runLogCode = Data.runLogCode;
-        if(Data == null){
-            res.status(400).json({ message : "The required project is not present!"})
-        }else{
-        let project = await Project.findOne({"_id" : projectId});
-        project["modifiedBy"] = actedBy;
-        project["modifiedOn"] = date;    
-
-        let setQuery = {};
-
-        if(runLogCount) {
-            setQuery["runLog.$.runLogCount"] = runLogCount;
-        }
-        if(testCasePassed) {
-            setQuery["runLog.$.testCasePassed"] = testCasePassed;
-        }
-        if(testCaseFailed) {
-            setQuery["runLog.$.testCaseFailed"] = testCaseFailed;
-        }
-        if(comment) {
-            setQuery["runLog.$.comment"] = comment;
-        }
-        if(imageOrAttachment) {
-            setQuery["runLog.$.imageOrAttachment"] = imageOrAttachment;
-        }
-        if(status) {
-            setQuery["runLog.$.status"] = status;
-        }
-        
-        let q = {"_id": projectId,"runLog.runLogCode": runLogCode}
-        await Project.findOneAndUpdate(q, {$set : setQuery}, {useFindAndModify: false});
-        let projectcode = Data.projectCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
-        res.status(200).json({ message :"Updated runLog details"});
-        } 
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({error});
-    }
 }
 
 //Function to delete the project.
@@ -409,28 +180,420 @@ async function deleteProject (req,res) {
     let { relevantData } = req.body;
     
     try {
-        await Project.remove({_id : projectID});
         let project = Project.findOne({_id : projectID});
+        await Project.deleteOne({_id : projectID});
         let projectcode = project.projectCode;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});
-        res.status(200).json({message : "Successfully deleted project"});
+        let actedOn = project.nameOfProject;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Successfully deleted project"});     
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error});
     }
 }
 
-module.exports = {
+//Function to post scenario.
+async function postScenario (req, res) {
+    let date = new Date();
+    let action = "Added scenario";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let { title, relevantData } = req.body;
+    let scenarioObj = {title, "createdBy" : actedBy, "createdOn" : date};
+    let projectId = req.params.projectID;
+
+    try {
+        let objId = await Project.findOne({ "_id" : projectId});
+        let scenario = await Scenario.create(scenarioObj);
+        let scenarioId = scenario._id;
+        await Scenario.findOneAndUpdate({"_id" : scenarioId}, {"projectId" : projectId});
+        let projectcode = objId.projectCode
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+        res.status(200).json({message : "Successfully added Scenario"});
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error});
+    }
+}
+
+//Function to get all scenario.
+async function getScenario (req,res){
+    try {
+        let result = await Scenario.find().sort({_id : -1});
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+
+//Function to post test case.
+async function postTestCase (req,res){
+    let date = new Date();
+    let action = "Add test Case";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let projectId = req.params.projectID;
+    let testCaseCode;
+    let scenario;
+
+    //Getting _id from array inside the db.
+    let {title, testDescriptions, scenarioID, attachment, testedBy, relevantData} = req.body;
+   
+    let testCaseObj = {testCaseCode, title, "projectID" : projectId, "userID" : userID, testDescriptions, scenarioID, scenario, attachment, testedBy, "createdBy" : actedBy, "createdOn" : date};
+
+    if(title == "" || testDescriptions == "" || attachment == "" || testedBy == ""){
+        res.json({ message : "Please fill all the details in test case!!!"});
+    }else{
+        try {
+            await TestCase.findOne({"title" : title}, async function(err,results){
+                if(err){ res.json({message : err})}
+                if(results){
+                    res.json({ message : "The test case already exists!!!!"});
+                }else{
+                    getNextSequenceValue("testCaseCode").then(async data => {
+                        let testcasecode = 'TC'+ data;    
+                        testCaseObj.testCaseCode = testcasecode;
+                        let getScenario = await Scenario.findOne({"_id" : scenarioID});
+                        testCaseObj["scenario"] = getScenario.title;
+                        await TestCase.create(testCaseObj);
+                        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                        res.status(200).json({message : "Successfully added test case"});
+                            }).catch(error => {
+                        console.log(error);
+                    res.status(400).json( { message : error });
+                    });
+             }});         
+        } catch (error) {
+            console.log(error);
+            res.status(400).json({ message : error});
+        } 
+    }
+}
+
+//Function to get all test cases.
+async function getTestCase (req,res) {
+    try {
+        let result = await TestCase.find().sort({_id : -1});
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//Function to get test case by id.
+async function getTestCaseById (req,res) {
+    try {
+        let result = await TestCase.findOne({"_id" : req.params.testCaseID});
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//Function to update test case.
+async function updateTestCase (req,res) {
+    let date = new Date();
+    let action = "Updated test Case";
+    let actedBy = req.user.payload.user.fName;
+    let testcaseId = req.params.testCaseID;
+    let userID = req.user.payload.userId;
+    
+    try {
+        let {title, testDescriptions, attachment, status, testedBy, remark, imageOrAttachment, relevantData, runLogId} = req.body;
+        let Data = await TestCase.findOne({"_id" : testcaseId});
+        if(Data == null){
+            res.status(400).json({ message : "The required test case is not present!"})
+        }else{
+            let setQuery = {};
+
+            if(title) {
+                setQuery["title"] = title;
+            }
+            if(testDescriptions) {
+                setQuery["testDescriptions"] = testDescriptions;
+            }
+            if(attachment) {
+                setQuery["attachment"] = attachment;
+            }
+            if(status) {
+                setQuery["status"] = status;
+            }
+            if(testedBy) {
+                setQuery["testedBy"] = testedBy;
+            }
+            if(remark) {
+                setQuery["remark"] = remark;
+            }
+            if(imageOrAttachment) {
+                setQuery["imageOrAttachment"] = imageOrAttachment;
+            }
+           
+            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date});
+
+            if(status == 'passed'){
+                await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCasePending" : -1}});
+                await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+            }
+            if(status == 'failed'){
+                await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1,"testCasePending" : -1}});
+                await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+            }
+
+            let testcasecode = Data.testCaseCode;
+            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+            res.status(200).json({ message :"Updated runLog details"});
+        } 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({error});
+    }
+}
+
+//Function to remove test case.
+async function removeTestCase (req,res) { 
+    try {
+        await TestCase.remove({"_id" : req.params.testCaseID});
+        res.status(200).json({message : "test case remove sucessfully!!!"});
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//Function to post run log.
+async function postRunLog (req,res) {
+    let date = new Date();
+    let action = "Added run log";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let projectId = req.params.projectID;
+    let runLogCode;
+    let totalTestCase;
+    let testCasePassed;
+    let testCaseFailed;
+    let testCasePending;
+    let testCaseList;
+ 
+    try {
+        let { runLogCount, remark, imageOrAttachment, scenarioID, filename, pdfFileName, status, relevantData } = req.body;
+        let runLogObj = { runLogCode, runLogCount, totalTestCase, testCasePassed, testCaseFailed, testCasePending, "userID" : userID, "projectId" : projectId, testCaseList, "leadBy" : actedBy, remark, imageOrAttachment, filename, pdfFileName, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date};
+
+        let getTestCase = await TestCase.find({ "scenarioID" : scenarioID });
+        console.log("getTestCase -- > ", getTestCase);
+
+        if(runLogCount == "" || remark == "" || status == ""){
+            res.json({ message : "Please fill all the fields!!!"});
+        }else{
+            getNextSequenceValue("runLogCode").then(async data => {
+                let runlogcode = 'RL'+ data;
+                totalTestCase = getTestCase.length;
+
+                runLogObj["runLogCode"] = runlogcode;
+                runLogObj["totalTestCase"] = totalTestCase;
+                runLogObj["testCasePending"] = totalTestCase;
+                runLogObj["testCaseList"] = getTestCase;
+
+                await RunLog.create(runLogObj);
+                let result = {
+                    status : 'success',
+                    data : {
+                        message : "Successfully added run log!!!"
+                    }
+                }
+                await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                res.status(200).json(result);
+             }).catch(error => {
+            console.log(error);
+            res.status(400).json( { message : error });
+          });    
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//get all run log.
+async function getRunLog (req,res){
+    try {
+        let result = await RunLog.find().sort({_id : -1});
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    } 
+}
+
+//get run log by id.
+async function getRunLogById (req,res){
+    try {
+        let result = await RunLog.findOne({"_id" : req.params.runLogID});
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    } 
+}
+
+//Function to update run log. 
+async function updateRunLog (req,res) {
+    let date = new Date();
+    let userID = req.user.payload.userId;
+    let action = "Updated run log";
+    let actedBy = req.user.payload.user.fName;
+    let runlogId = req.params.runLogID;
+
+    try {
+        let { runLogCount, comment, imageOrAttachment, status, relevantData } = req.body;
+        let Data = await RunLog.findOne({"_id" : runlogId})
+        if(Data == null){
+            res.status(400).json({ message : "The required runlog is not present!"})
+        }else{
+            let setQuery = {};
+
+            if(runLogCount) {
+                setQuery["runLogCount"] = runLogCount;
+            }
+            if(comment) {
+                setQuery["comment"] = comment;
+            }
+            if(imageOrAttachment) {
+                setQuery["imageOrAttachment"] = imageOrAttachment;
+            }
+            if(status) {
+                setQuery["status"] = status;
+            }
+
+            await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date });
+            let runlogcode = Data.runLogCode;
+            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+          res.status(200).json({ message :"Updated runLog details"});
+        } 
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({error});
+    }
+}
+
+//Function to remove runlog case.
+async function removeRunlog (req,res) { 
+    try {
+        await RunLog.remove({"_id" : req.params.runLogID});
+        res.status(200).json({message : "runlog deleted sucessfully!!!!"});
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message : error });
+    }
+}
+
+//Generate run log pdf
+async function generatePdf (req, res) {
+    let { filename, pdfFileName} = req.body;
+    let action = "Generated pdf of run log and send it to mail";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+
+    try {
+        let runLogId = req.params.runLogID
+        let Data = await RunLog.findOne({"_id" : runLogId});
+        if(Data == null){
+            res.status(400).json({ message : "The required run log is not present!"})
+        }else{
+            let runlogcode = Data.runLogCode;
+            if (Data.filename == pdfFileName) {
+                res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
+                } else { 
+                    convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
+                    let test1 = await RunLog.findOneAndUpdate({"_id" : runLogId}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}});
+                    console.log("test1 --- > ",test1);
+                    let test2 = await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                    console.log("test2 --- > ",test2);
+                    res.status(200).json({ message : "PDF Generated!"});
+                    }).catch((error) => {
+                        res.status(400).json({ message : "PDF not Generated!"});
+                    });
+                }
+            }
+        } catch (error) {
+        console.log(error);
+      res.status(400).json({error});
+    }
+};
+
+async function generateCsv (req,res) {
+    let runLogId = req.params.runLogID;
+    try {
+        let dataArrays = await RunLog.find({"_id" : runLogId});
+        console.log("dataArrays --- > ", dataArrays);
+        let fields = ['runLogCode', 'runLogCount', 'totalTestCase', 'testCasePassed', 'testCaseFailed', 'testCasePending', 'projectId', 'testCaseList.testCaseCode', 'testCaseList.title', 'testCaseList.scenarioID', 'testCaseList.scenario', 'testCaseList.testDescriptions', 'testCaseList.status', 'testCaseList.testedBy', 'testCaseList.remark', 'testCaseList.imageOrAttachment', 'leadBy', 'remark', 'status', 'createdBy', 'createdOn', 'modifiedBy', 'modifiedOn'];
+        let transforms = [unwind({ paths: ['testCaseList']})];
+        console.log("transforms --- > ",transforms);
+        let json2csvParser = new Parser({ fields, transforms });
+        console.log("json2csvParser --- > ", json2csvParser);
+        let json2csvParser1 = new Parser({ fields });
+        console.log("json2csvParser1 -- > ", json2csvParser1);
+        let csv = json2csvParser.parse(dataArrays);
+        console.log(csv);
+        let csv1 = json2csvParser1.parse(dataArrays);
+        console.log(csv1);
+        res.status(200).send(csv);
+    } catch (error) {
+        res.status(400).json({message : "CSV not generated!"});
+    }
+}
+
+async function changeProjectCondition (req,res) {
+    let date = new Date();
+    let { condition, relevantData } = req.body;
+    let projeictd = req.params.projectID;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let action;
+
+    if(condition == "Active"){
+        action = "The project Activated"
+    }
+    if(condition == "Inactive"){
+        acttion = "The project Inactived"
+    }
+
+    try {
+        let projectData = await Project.findOne({"_id" : projeictd});
+        await Project.findOneAndUpdate({ "_id" : projeictd }, {$set : { "condition" : condition}});
+        let actedOn = projectData.nameOfProject;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Changed project status!"});
+    } catch (error) {
+        console.log("error --- > ",error);
+        res.status(400).json({message : error});
+    }
+};
+
+module.exports = {  
     postProject : postProject,
+    getProject : getProject,
+    getProjectById : getProjectById,
+    updateProject : updateProject,
+    deleteProject : deleteProject,
     postScenario : postScenario,
+    getScenario : getScenario,
+    removeRunlog : removeRunlog,
+    getRunLogById : getRunLogById,
+    getRunLog : getRunLog,
+    getTestCaseById : getTestCaseById,
+    removeTestCase : removeTestCase,
+    getTestCase : getTestCase,
     postTestCase : postTestCase,
     postRunLog : postRunLog,
     generatePdf : generatePdf,
-    getProject : getProject,
     getFilterdProject : getFilterdProject,
-    getProjectById : getProjectById,
-    updateProject : updateProject,
     updateRunLog : updateRunLog,
     updateTestCase : updateTestCase,
-    deleteProject : deleteProject
+    generateCsv : generateCsv,
+    changeProjectCondition : changeProjectCondition
 }

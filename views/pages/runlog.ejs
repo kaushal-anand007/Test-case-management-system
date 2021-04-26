@@ -12,37 +12,137 @@
 	
 	<div class="card mb-4" style="text-decoration: solid;">
 			<div class="row">
-				<label class="col-form-label col-sm-3 text-sm-right">Project Name</label>
+				<label class="col-form-label col-sm-3 text-sm-right">Runlog Count</label>
 				<div class="col-sm-9">
-				  <%= runLog.runLogCount %>
+				  <%= runLogCount %>
 				</div>
 			</div>
 	
 			<div class="row">
-				<label class="col-form-label col-sm-3 text-sm-right">StoreKing ID</label>
+				<label class="col-form-label col-sm-3 text-sm-right">Total Testcases</label>
 				<div class="col-sm-9">
-					<%= runLog.testCasePassed %>
-				</div>
-			</div>
-	
-			<div class="row">
-				<label class="col-form-label col-sm-3 text-sm-right">Expected Result</label>
-				<div class="col-sm-9">
-				    <%= runLog.testCaseFailed %>
-				</div>
-			</div>
-	
-			<div class="row">
-				<label class="col-form-label col-sm-3 text-sm-right">Actual Result</label>
-				<div class="col-sm-9">
-					<%= runLog.comment %>
+					<%= totalTestCase %>
 				</div>
 			</div>
 	
 			<div class="row">
 				<label class="col-form-label col-sm-3 text-sm-right">Test Cases Passed</label>
 				<div class="col-sm-9">
-					<%= runLog.imageOrAttachment %>
+				    <%= testCasePassed %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Test Cases Failed</label>
+				<div class="col-sm-9">
+					<%= testCaseFailed %>
+				</div>
+			</div>
+	
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Test Cases Pending</label>
+				<div class="col-sm-9">
+					<%= testCasePending %>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Project Name</label>
+				<div class="col-sm-9">
+					<%= projectId %> 
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Test Cases List</label>
+				<div class="col-sm-9">
+					<table  class="table table-striped table-bordered card-table">
+						<thead>
+							<tr>
+								<% for(let i=0; i<testCaseList.length; i++){ %>
+									<hr style="width:95%;text-align:left;margin-right:0">
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">Id</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i]._id %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">status</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].status %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">testCaseCode</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].testCaseCode %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">testDescriptions</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].testDescriptions %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">scenarioID</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].scenarioID %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">scenario</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].scenario %></p>
+										</div>
+									</div>
+									<div class="row">
+										<label class="col-form-label col-sm-3 text-sm-right">testedBy</label>
+										<div class="col-sm-9">
+											<p><%= testCaseList[i].testedBy %></p>
+										</div>
+									</div>
+									<hr style="width:95%;text-align:left;margin-right:0">
+								<% } %>
+							</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Lead By</label>
+				<div class="col-sm-9">
+					<%= leadBy %>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Comments</label>
+				<div class="col-sm-9">
+					<%= remark %>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Status of Runlog</label>
+				<div class="col-sm-9">
+					<%= status %>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Created By</label>
+				<div class="col-sm-9">
+					<%= createdBy %>
+				</div>
+			</div>
+
+			<div class="row">
+				<label class="col-form-label col-sm-3 text-sm-right">Created On</label>
+				<div class="col-sm-9">
+					<%= createdOn %>
 				</div>
 			</div>
 	  </div>

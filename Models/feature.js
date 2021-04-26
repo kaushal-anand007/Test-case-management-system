@@ -13,6 +13,10 @@ const featureSchema =new mongoose.Schema({
        type : String
    },
 
+   decription : {
+       type : String
+   },
+
    createdBy : {
         type : String
    },
@@ -29,10 +33,11 @@ const featureSchema =new mongoose.Schema({
        type : Date
    },
 
-   status : {
+   condition : {
     type : String,
+    default : 'Active',
     enum : ['Active', 'Inactive']
-}
+  }
 })
 
 

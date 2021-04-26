@@ -8,15 +8,18 @@ const { getFeatureAccess } = require('../Helpers/role');
 router.post('/add/', verifyAccessTokenForUserId, FeatureController.postFeature);
 
 //Get feature.
-router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.getFeature);
+router.get('/list/', verifyAccessTokenForUserId, FeatureController.getFeature);
 
-//Get feature by id.
+//Get feature.
 router.get('/get/:featureID', verifyAccessTokenForUserId, getFeatureAccess, FeatureController.getFeatureById)
 
-//Update traceability report.
+//Update feature.
 router.put('/update/:featureID', verifyAccessTokenForUserId, FeatureController.updateFeature);
 
-//Delete traceability.
-router.delete('/remove/:featureID', verifyAccessTokenForUserId, FeatureController.deleteFeature);
+//Delete feature.
+router.delete('/delete/:featureID', verifyAccessTokenForUserId, FeatureController.deleteFeature);
+
+//Change feature condition.
+router.put('/remove/:featureID', verifyAccessTokenForUserId, FeatureController.changeFeatureCondition);
 
 module.exports =router;

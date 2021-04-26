@@ -6,6 +6,7 @@ function paginationResults (model) {
         let startIndex = (page - 1) * limit;
         let endIndex = page * limit;
         let results = {};
+        let data;
 
         if(endIndex < model.length) {
             results.next = {
@@ -21,8 +22,20 @@ function paginationResults (model) {
             }
         }
 
+        if(model == User){
+            data = {
+                "condition" : "Active"
+            }
+        }
+        
+        if(model == Project){
+            data = {
+                "condition" : "Active"
+            }
+        } 
+
         try {
-            results.results = await model.find().sort({_id : -1}).limit(limit).skip(startIndex).exec();
+            results.results = await model.find(data).sort({_id : -1}).limit(limit).skip(startIndex).exec();
             res.paginationResults = results;
             next();  
         } catch (error) {

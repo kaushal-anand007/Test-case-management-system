@@ -21,9 +21,6 @@ router.get('/confirm/:confirmationCode', UserController.verifyuser);
 //Email confirmation.
 router.post('/mail-confirm', UserController.mailConfirm);
 
-//Password creation for new user.
-router.post('/password-create/:userID', UserController.passwordCreate);
-
 //Forget password.
 router.post('/forget-password', UserController.forgetPassword);
 
@@ -54,13 +51,19 @@ router.get('/filtered-list', verifyAccessTokenForUserId, UserController.getFilte
 //Getting specific user.
 router.get('/get/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.getUserById);
 
+//Getting user.
+router.get('/get/', verifyAccessTokenForUserId, UserController.getUser);
+
 //Updating user.
 router.put('/update/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.updateUserById);
 
-//Update user to make it Block.
+//Update user to make it Block/Unblock.
 router.put('/status/:userID', verifyAccessTokenForUserId, getFeatureAccess, UserController.updateStatus);
 
 //Deleting specific post.
-router.delete('/remove/:userID', verifyAccessTokenForUserId, UserController.removeUserById);
+router.delete('/delete/:userID', verifyAccessTokenForUserId, UserController.deleteUserById);
+
+//Change user condition.
+router.put('/remove/:userID', verifyAccessTokenForUserId, UserController.changeUserCondition);
 
 module.exports =router;

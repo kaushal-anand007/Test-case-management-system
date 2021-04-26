@@ -6,13 +6,14 @@ const bcrypt = require('bcrypt');
 const Log =require('../Models/log');
 const Report = require('../Models/report');
 const Project = require('../Models/project');
+const TestCase = require('../Models/testcase');
+const RunLog = require('../Models/runlog');
 const moment = require('moment');
 const RoleCounter = require('../Models/counter');
 const nodemailer = require('nodemailer');
 const { Mongoose } = require('mongoose');
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 const Role = require('../Models/role');
-const role = require('../Models/role');
 const toCreateMessageforLog = require('../Helpers/log');
 
 //Importig .env here.
@@ -66,9 +67,19 @@ async function registerUser (req,res) {
     }
 
     let confirmationCode = token;
-
+    let passWord;
+    for (let i = 0; i < 5; i++) {
+        passWord += characters[Math.floor(Math.random() * characters.length )];
+    }
+    
+    let newUserPassword = "SK" + passWord;
+    console.log("newUserPassword -- > ", newUserPassword);
     try{
-     let userObj = { fName, lName, address, phone, email, "role" : role, "date" : date, "confirmationCode" : confirmationCode, filename, path, "createdBy" : fName, "createdOn" : date };
+     //Encrypted the password created 
+     const salt = await bcrypt.genSalt(5);
+     let password = await bcrypt.hash(newUserPassword, salt);
+
+     let userObj = { fName, lName, address, phone, email, "password" : password, "role" : role, "date" : date, "confirmationCode" : confirmationCode, filename, path, "createdBy" : fName, "createdOn" : date };
      if(fName == "" || lName == "" || email == "" || role == "" || address == "" || phone == ""){
          res.json({ message : "Please fill all the fields!!"})
      }else{
@@ -87,17 +98,19 @@ async function registerUser (req,res) {
                     }
 
                     let fName = req.body.fName;
-                    let email = "";
+                    let email = req.body.email;
                     let html = "allowed";
                     let filename= "";
                     let path = "";
-                    let password = "";
+                    let password = newUserPassword;
+                    console.log("password -- > ", password);
+                    let otp = "";
 
-                    getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, password);
+                    getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
                     let actedBy = req.user.payload.user.fName;
                     let actedOn = fName;
                     let userID = user && user._id;
-                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}}); 
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
 
                     res.status(200).json(result);
                 }).catch(error => {
@@ -161,48 +174,6 @@ async function mailConfirm (req, res){
     }
 }
 
-//Create password for new user
-async function passwordCreate (req,res){
-    let { password, relevantData } = req.body;
-    let action = "Created Password";
-    
-    //Current date and time.
-    let date = new Date();
-
-    try {
-        //Encrypted the password created 
-        const salt = await bcrypt.genSalt(5);
-        password = await bcrypt.hash(password, salt);
-        let user =  await User.findOneAndUpdate({_id : req.params.userID},{
-            $set : { "password" : password},
-            $push : {user_activities: [{"Action" : action, "date" : date}]}
-        });
-        let getRole = user.role;
-        let role = await Role.findOne({ "roleName" :  getRole});
-        //Creating token.
-        let token = createToken(user);
-            const result = {
-            status : "success",
-                data: {
-                    token : token,
-                    userId : user._id,
-                    role : user.role,
-                    userStatus : user.status,
-                    featureList : role.featureList
-                } 
-            }
-            let userID = user.userID;
-            let usercode = user.userCode;
-            let actedBy = user.fName;
-            await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
-            res.status(200).json(result);   
-    }catch (error) {
-        console.log(error);
-        res.status(400).json({ message : "Password is not created please contact admin."});
-    }
-
-}
-
 //Forget password.
 async function forgetPassword (req,res) {
     let { email } = req.body;
@@ -210,7 +181,7 @@ async function forgetPassword (req,res) {
     let timeAtWhichOtpExpires = new Date();
     timeAtWhichOtpExpires = timeAtWhichOtpExpires.setMinutes( timeAtWhichOtpCreated.getMinutes() + 5 );
 
-    //Generating conformation code.
+    //Generating otp.
     const characters = '0123456789';
     let otp = '';
     for (let i = 0; i < 6; i++) {
@@ -273,13 +244,47 @@ async function resetPasswordAfterOtpGeneration (req,res) {
             res.status(400).json({ message : "This user is not present"});
         }else{
             const salt = await bcrypt.genSalt(5);
-            password = await bcrypt.hash(password, salt);
-            await User.findOneAndUpdate({"email" : req.params.email}, {$set : {"password" : password}});
+            let Password = await bcrypt.hash(password, salt);
+            await User.findOneAndUpdate({"email" : req.params.email}, {$set : {"password" : Password}});
             res.status(200).json({ message : "Sucessfully changed the password!!!"});
         }
     } catch (error) {
        console.log("error --- > ",error);
        res.status(400).json({ message : "Please contact admin!!!"});
+    }
+}
+
+//Change password by role.
+async function changePasswordByRole (req, res) {
+    let date = new Date();
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let action = "password sucessfully changed!"
+    let usercode = req.user.payload.user.userCode;
+    let { password, relevantData } = req.body;
+    try {
+        let getEmail = await User.findOne({ "email" : req.params.email });
+        let actedOn = getEmail.fName;
+        if(getEmail ==null){
+            res.status(400).json({message : "The user is not present"});   
+        }else{
+            const salt = await bcrypt.genSalt(5);
+            let Password = await bcrypt.hash(password, salt);
+            let fName = req.body.fName;
+                    let email = req.body.email;
+                    let html = "roleGeneratedPassword";
+                    let filename= "";
+                    let path = "";
+                    let otp = "";
+
+                getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
+            await User.findOneAndUpdate({"email" : req.params.email}, {$set : {"password" : Password}});
+            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+            res.status(200).json({ message : "Sucessfully changed the password!!!"});
+        }
+    } catch (error) {
+       console.log("error --- > ",error);
+       res.status(400).json({ message : error});
     }
 }
 
@@ -298,7 +303,8 @@ async function getFilterdUser (req,res) {
     let filter = {
         "role" : req.body.role,
         "status" : req.body.status,
-        "date" : req.body.date
+        "date" : req.body.date,
+        "condition" : "Active"
     };
 
     try{
@@ -310,18 +316,45 @@ async function getFilterdUser (req,res) {
     }
 }
 
-//Get all registered user by id.
+//Get user
+async function getUser (req,res){
+    let userID = req.user.payload.userId;
+    try {
+        let getUser = await User.findOne({userID});
+        res.status(200).json(getUser);
+    } catch (error) {
+        console.log("error --- > ", error);
+        res.status(400).json(error);
+    }
+}
+
+//Get user by id.
 async function getUserById (req,res) {
     let user = req.params.userID;
     try{
         let uniqueUser = await User.findOne({ _id : user});
-        let output = [];
+        let projectOutput = [];
+        let testOutput = [];
+        let runOutput = [];
         let getProjectDetails = await Project.find({"members._id" : user});
+        let getTestCaseDetails = await TestCase.find({"userID" : user});
+        let getRunlogDetails = await RunLog.find({"userID" : user});
 
         getProjectDetails.forEach(function(r,i){
             let projectObj = Object.assign({},{projectCode:r.projectCode,nameOfProject:r.nameOfProject,status:r.status,startDate:r.startDate,endDate:r.endDate});
-            output.push(projectObj);
+            projectOutput.push(projectObj);
         });
+
+        getTestCaseDetails.forEach(function(r,i){
+            let testcaseobj = Object.assign({},{testCaseCode:r.testCaseCode,title:r.title,testDescriptions:r.testDescriptions,scenario:r.scenario,status:r.status,testedBy:r.testedBy,remark:r.remark});
+            testOutput.push(testcaseobj);
+        });
+
+        getRunlogDetails.forEach(function(r,i){
+            let runlogobj = Object.assign({},{runLogCode:r.runLogCode,runLogCount:r.runLogCount,totalTestCase:r.totalTestCase,testCasePassed:r.testCasePassed,testCaseFailed:r.testCaseFailed,testCasePending:r.testCasePending,leadBy:r.leadBy,remark:r.remark,status:r.status});
+            runOutput.push(runlogobj);
+        });
+
         let result = {
             userData: {
                 "userCode" : uniqueUser.userCode,
@@ -334,7 +367,9 @@ async function getUserById (req,res) {
                 "address" : uniqueUser.address,
                 "phone" : uniqueUser.phone
             },
-            projectData : output   
+            projectData : projectOutput,
+            testData : testOutput,
+            runData : runOutput   
         }
         res.json(result);
     }catch (err) {
@@ -372,7 +407,7 @@ async function updateStatus (req,res) {
             actedOn =user.fName;    
             res.json({ message : "User have been blocked!!!"});  
         }
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}});           
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});           
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -400,7 +435,7 @@ async function updateUserById (req,res) {
             {_id : userID},
             {$set : user, modifiedBy, modifiedOn}
           );
-          await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action1, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action1)}]}});      
+          await Log.create({"UserID": userID, "referenceType" : action1, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action1)});      
         }else{
         await User.findOneAndUpdate(
             {_id : userid},
@@ -409,7 +444,7 @@ async function updateUserById (req,res) {
           let actedOn = users.fName;
           users["modifiedBy"] = actedBy;
           users["modifiedOn"] = date;
-          await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action2, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action2, actedOn)}]}});      
+          await Log.create({"UserID": userID, "referenceType" : action2, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action2, actedOn)});      
         }  
      
      res.json({ message : "Updated user!!!"});
@@ -420,7 +455,7 @@ async function updateUserById (req,res) {
 };
 
 //Remove user by id.
-async function removeUserById (req,res) {
+async function deleteUserById (req,res) {
     let date = new Date();
     let { relevantData } = req.body;
     let action = "Deleted user";
@@ -430,8 +465,9 @@ async function removeUserById (req,res) {
     let userid = req.params.userID
     try{
         let findUser = await User.findOne({ "_id" : userid});
+        await User.deleteOne({ "_id" : userid});
         let actedOn = findUser.fName;
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}]}});        
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});        
         res.json({ message : "Deleted user!!!"});
         await User.remove({"_id" : userid});
     }catch (err) {
@@ -452,7 +488,7 @@ async function logout (req,res) {
     let { relevantData } = req.body;
 
     try {
-        await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});        
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});        
         res.status(200).json({ message : "Logout Sucessfull"});
     } catch (error) {
         console.log(error);
@@ -513,26 +549,21 @@ async function login (req,res) {
                 console.log("role --- > ",role);
                 //Password Authentication.
                 let auth = await bcrypt.compare(password, user.password);
-                if(auth) {
-                    //Creating token.
-                    let token = createToken(user);
-                    const result = {
-                        status : "success",
-                        data: {
-                            token : token,
-                            userId : user._id,
-                            role : user.role,
-                            userStatus : user.status,
-                            featureList : role.featureList
-                        } 
-                    }
-                    let check = await Log.findOne({"UserID" : userID});
-                        if(check == null){
-                            await Log.create({ user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}], "UserID": userID});
-                        }else{
-                            await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}}); 
+                    if(auth) {
+                        //Creating token.
+                        let token = createToken(user);
+                        const result = {
+                            status : "success",
+                            data: {
+                                token : token,
+                                userId : user._id,
+                                role : user.role,
+                                userStatus : user.status,
+                                featureList : role.featureList
+                            } 
                         }
-                        res.status(200).json(result);
+                    await Log.create({ "UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                    res.status(200).json(result);
                 }else {
                     res.status(400).json({ message : "Password incorrect"});
                 }
@@ -584,7 +615,7 @@ async function dashboad (req,res) {
 };
 
 //Adding update password    
-async function updatePassword (req, res){
+async function updatePassword (req, res) {
     let { Password, newPassword, relevantData} = req.body;
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
@@ -606,7 +637,7 @@ async function updatePassword (req, res){
                     //Updating new password.
                     await users.updateOne({ password : newPassword});
 
-                    await Log.findOneAndUpdate({"UserID": userID}, { $push : {user_activities: [{"referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}]}});
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
                     res.status(200).json({ message : "Sucessfully Changed the password"}); 
                 }else{
                     res.status(400).json({ message : "Please enter another password"});
@@ -620,25 +651,55 @@ async function updatePassword (req, res){
     }
 };
 
+async function changeUserCondition (req,res) {
+    let date = new Date();
+    let { condition, relevantData } = req.body;
+    let userid = req.params.userID;
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
+    let action;
+
+    if(condition == "Active"){
+        action = "The role Activated"
+    }
+    if(condition == "Inactive"){
+        acttion = "The role Inactived"
+    }
+
+    try {
+        let userData = await User.findOne({"_id" : userid});
+        await User.findOneAndUpdate({"_id" : userid}, {$set : { "condition" : condition}});
+        let actedOn = userData.fName;
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        res.status(200).json({message : "Change user status!"});
+    } catch (error) {
+        console.log("error --- > ",error);
+        res.status(400).json({message : error});
+    }
+}
+
 module.exports = {
     registerUser : registerUser,
     getRegisteredUser : getRegisteredUser,
     mailConfirm : mailConfirm,
-    passwordCreate : passwordCreate,
     forgetPassword : forgetPassword,
     otpValidation : otpValidation,
+    changePasswordByRole : changePasswordByRole,
     resetPasswordAfterOtpGeneration : resetPasswordAfterOtpGeneration,
     verifyuser : verifyuser,
     getFilterdUser : getFilterdUser,
+    getUser : getUser,
     getUserById : getUserById,  
     updateStatus : updateStatus,
     updateUserById : updateUserById,
-    removeUserById : removeUserById,
+    deleteUserById : deleteUserById,
     login : login,
     createToken : createToken,
     logout : logout,
     logDetails : logDetails,
     logAllDetails : logAllDetails,
     dashboad : dashboad,
-    updatePassword : updatePassword
+    updatePassword : updatePassword,
+    changeUserCondition : changeUserCondition
 };

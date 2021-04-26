@@ -38,127 +38,10 @@ const projectSchema=new mongoose.Schema({
         type : String
     },
 
-    scenario : [{
-        title : {
-            type : String
-        },
-
-        createdBy : {
-            type : String
-        },
-    
-        createdOn : {
-            type : Date
-        }
-    }],
-
-    testCase : [{
-        testCaseCode : {
-            type : String 
-        },
-        
-        title : {
-            type : String
-        },
-
-        testDescriptions : {
-            type : String
-        },
-
-        attachment : {
-            type : String
-        },
-
-        status : {
-            type : String,
-            enum : ['Active', 'Inactive']
-        },
-
-        assignedTo : { 
-            _id : { type : String},
-            fName : { type : String},
-            lName : { type : String}
-        },
-
-        createdBy : {
-            type : String
-        },
-    
-        createdOn : {
-            type : Date
-        },
-    
-        modifiedBy : {
-            type : String
-        },
-    
-        modifiedOn : {
-            type : Date
-        },
-    }],
-
-    runLog : [{
-        runLogCode : {
-            type : String
-        },
-
-        runLogCount : {
-            type : Number
-        },
-
-        testCasePassed : {
-            type : Number
-        },
-
-        testCaseFailed : {
-            type : Number
-        },
-
-        testCaseList : {
-            type : String
-        },
-
-        comment : {
-            type : String
-        },
-
-        imageOrAttachment : {
-            type: String
-        },
-
-        filename : {
-            type : String
-        },
-
-        pdfFileName : {
-            type : String
-        },
-
-        status : {
-            type : String,
-            enum : ['pending', 'progress', 'complete', 'rejected']
-        },
-
-        createdBy : {
-            type : String
-        },
-    
-        createdOn : {
-            type : Date
-        },
-    
-        modifiedBy : {
-            type : String
-        },
-    
-        modifiedOn : {
-            type : Date
-        },
-    }],
-
     status : {
         type : String,
-        enum : ['Active', 'Inactive']
+        default : 'created',
+        enum : ['created','pending', 'progress', 'complete', 'rejected']
     },
 
     createdBy : {
@@ -176,6 +59,12 @@ const projectSchema=new mongoose.Schema({
     modifiedOn : {
         type : Date
     },
+
+    condition : {
+        type : String,
+        default : 'Active',
+        enum : ['Active', 'Inactive']
+    }
 }); 
 
 module.exports = mongoose.model('Project', projectSchema);
