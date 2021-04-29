@@ -58,11 +58,8 @@ router.put('/update-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAcc
 //Remove run-log
 router.delete('/remove-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.removeRunlog);
 
-//Post pdf of run log.
-router.post('/runlog-pdf/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.generatePdf);
-
-//Post csv of run log.
-router.get('/runlog-csv/:runLogID', verifyAccessTokenForUserId, ProjectController.generateCsv);
+//Post pdf and csv of run log.
+router.get('/runlog-pdf-csv/:runLogID', verifyAccessTokenForUserId, ProjectController.generatePdfAndCsv);
 
 //delete project.
 router.delete('/delete/:projectID', verifyAccessTokenForUserId, ProjectController.deleteProject);

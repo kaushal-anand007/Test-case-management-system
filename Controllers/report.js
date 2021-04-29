@@ -130,12 +130,13 @@ async function deleteReport (req,res) {
 async function generatePdf(req, res) {
     let { filename, pdfFileName } = req.body;
     let reportID = req.params.reportID;
+    let html = "get pdf for report";
     try {
         let Data = await Report.findOne({"_id" : reportID});
         if (Data.filename == pdfFileName) {
             res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
         } else { 
-            convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
+            convertHtmlToPdf(Data, filename, pdfFileName, html).then(async result => {
                 await Report.findOneAndUpdate({"_id" : reportID}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}})
                 res.status(200).json({ message : "PDF Generated!"});
             }).catch((error) => {

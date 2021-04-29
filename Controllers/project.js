@@ -7,6 +7,7 @@ const convertHtmlToPdf = require('../Helpers/pdf');
 const RunLog = require('../Models/runlog');
 const TestCase = require('../Models/testcase');
 const Scenario = require('../Models/scenario');
+const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 const { Parser, transforms: { unwind }  } = require('json2csv');
 
 //Function to auto increment the usercode.
@@ -239,11 +240,11 @@ async function postTestCase (req,res){
     let scenario;
 
     //Getting _id from array inside the db.
-    let {title, testDescriptions, scenarioID, attachment, testedBy, relevantData} = req.body;
+    let {title, testDescriptions, scenarioID, relevantData} = req.body;
    
-    let testCaseObj = {testCaseCode, title, "projectID" : projectId, "userID" : userID, testDescriptions, scenarioID, scenario, attachment, testedBy, "createdBy" : actedBy, "createdOn" : date};
+    let testCaseObj = {testCaseCode, title, "projectID" : projectId, "userID" : userID, testDescriptions, scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date};
 
-    if(title == "" || testDescriptions == "" || attachment == "" || testedBy == ""){
+    if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
     }else{
         try {
@@ -301,10 +302,18 @@ async function updateTestCase (req,res) {
     let actedBy = req.user.payload.user.fName;
     let testcaseId = req.params.testCaseID;
     let userID = req.user.payload.userId;
+    let lname = req.user.payload.user.lName;
     
     try {
-        let {title, testDescriptions, attachment, status, testedBy, remark, imageOrAttachment, relevantData, runLogId} = req.body;
+        let {title, testDescriptions, status, remark, imageOrAttachment, relevantData, runLogId} = req.body;
         let Data = await TestCase.findOne({"_id" : testcaseId});
+        let testcasecode = Data.testCaseCode;
+        let testedBy = {
+            "_id" : userID,
+            "fName" : actedBy,
+            "lName" : lname
+        };
+
         if(Data == null){
             res.status(400).json({ message : "The required test case is not present!"})
         }else{
@@ -315,9 +324,6 @@ async function updateTestCase (req,res) {
             }
             if(testDescriptions) {
                 setQuery["testDescriptions"] = testDescriptions;
-            }
-            if(attachment) {
-                setQuery["attachment"] = attachment;
             }
             if(status) {
                 setQuery["status"] = status;
@@ -332,21 +338,48 @@ async function updateTestCase (req,res) {
                 setQuery["imageOrAttachment"] = imageOrAttachment;
             }
            
-            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date});
+            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy});
+
+            let statusData = Data.status;
+            console.log("status --- > ",status);
+            console.log("statusData --- > ",statusData);
 
             if(status == 'passed'){
-                await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCasePending" : -1}});
-                await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
-            }
-            if(status == 'failed'){
-                await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1,"testCasePending" : -1}});
-                await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+                if(statusData == 'passed'){
+                    res.status(200).json({message : "This test case is already passed!!"});
+                }else if(statusData == 'failed'){
+                    await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCaseFailed" : -1}});
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                    res.status(200).json({ message :"Updated runLog details"});
+                }else if(statusData == 'pending'){
+                    await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCasePending" : -1}});
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                    res.status(200).json({ message :"Updated runLog details"});
+                }else{
+                    res.status(400).json({message : "The required request is not available"});
+                }
             }
 
-            let testcasecode = Data.testCaseCode;
-            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
-            res.status(200).json({ message :"Updated runLog details"});
-        } 
+            if(status == 'failed'){
+                if(statusData == 'failed'){
+                    res.status(200).json({message : "This test case is already failed!!"});    
+                }else if(statusData == 'passed'){
+                    await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1, "testCasePassed" : -1}});
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                    res.status(200).json({ message :"Updated runLog details"});
+                }else if(statusData == 'pending'){
+                    await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1,"testCasePending" : -1}});
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status}});
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                    res.status(200).json({ message :"Updated runLog details"});
+                }else{
+                    res.status(400).json({message : "The required request is not available"});
+                }
+            }
+        }
     } catch (error) {
         console.log(error);
         res.status(400).json({error});
@@ -370,6 +403,7 @@ async function postRunLog (req,res) {
     let action = "Added run log";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
+    let lname = req.user.payload.user.lName;
     let projectId = req.params.projectID;
     let runLogCode;
     let totalTestCase;
@@ -380,7 +414,7 @@ async function postRunLog (req,res) {
  
     try {
         let { runLogCount, remark, imageOrAttachment, scenarioID, filename, pdfFileName, status, relevantData } = req.body;
-        let runLogObj = { runLogCode, runLogCount, totalTestCase, testCasePassed, testCaseFailed, testCasePending, "userID" : userID, "projectId" : projectId, testCaseList, "leadBy" : actedBy, remark, imageOrAttachment, filename, pdfFileName, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date};
+        let runLogObj = { runLogCode, runLogCount, totalTestCase, testCasePassed, testCaseFailed, testCasePending, "userID" : userID, "projectId" : projectId, testCaseList, "leadBy" : { "_id" : userID," fName" : actedBy, "lName" : lname}, remark, imageOrAttachment, filename, pdfFileName, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date};
 
         let getTestCase = await TestCase.find({ "scenarioID" : scenarioID });
         console.log("getTestCase -- > ", getTestCase);
@@ -396,6 +430,7 @@ async function postRunLog (req,res) {
                 runLogObj["totalTestCase"] = totalTestCase;
                 runLogObj["testCasePending"] = totalTestCase;
                 runLogObj["testCaseList"] = getTestCase;
+                runLogObj["scenarioID"] = scenarioID;
 
                 await RunLog.create(runLogObj);
                 let result = {
@@ -491,8 +526,8 @@ async function removeRunlog (req,res) {
 }
 
 //Generate run log pdf
-async function generatePdf (req, res) {
-    let { filename, pdfFileName} = req.body;
+async function generatePdfAndCsv (req, res) {
+    let date = new Date();
     let action = "Generated pdf of run log and send it to mail";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
@@ -500,51 +535,48 @@ async function generatePdf (req, res) {
     try {
         let runLogId = req.params.runLogID
         let Data = await RunLog.findOne({"_id" : runLogId});
+        let runcode = Data.runLogCode;
+        let filename = 'runlog';
+        let pdfFileName = runcode;
+        let html = 'get pdf and csv for runlog';
         if(Data == null){
             res.status(400).json({ message : "The required run log is not present!"})
         }else{
             let runlogcode = Data.runLogCode;
-            if (Data.filename == pdfFileName) {
-                res.status(400).json({ message : "Duplicate pdf file name! Try another one."});
-                } else { 
-                    convertHtmlToPdf(Data, filename, pdfFileName).then(async result => {
-                    let test1 = await RunLog.findOneAndUpdate({"_id" : runLogId}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}});
-                    console.log("test1 --- > ",test1);
-                    let test2 = await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
-                    console.log("test2 --- > ",test2);
-                    res.status(200).json({ message : "PDF Generated!"});
+                    //convert html to pdf
+                    convertHtmlToPdf(Data, filename, pdfFileName, html, runcode).then(async result => {
+                    await RunLog.findOneAndUpdate({"_id" : runLogId}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}});
+                        
+                    //convert json to csv.
+                    let dataArrays = await RunLog.find({"_id" : runLogId});
+                    var myJSON = JSON.stringify(dataArrays);
+                    var myParse = JSON.parse(myJSON);
+                    let fields = ['leadBy','runLogCount','totalTestCase','testCasePassed','testCaseFailed','testCasePending','status','runLogCode','projectId','testCaseList._id','testCaseList.status', 'testCaseList.testCaseCode', 'testCaseList.testDescriptions', 'testCaseList.scenarioID', 'testCaseList.scenario', 'testCaseList.testedBy', 'remark', 'createdBy', 'createdOn', 'modifiedBy', 'modifiedOn'];
+                    let transforms = [unwind({ paths: ['testCaseList']})];
+                    let json2csvParser = new Parser({ fields, transforms });
+                    let csv = json2csvParser.parse(myParse);
+
+                    let fName ="";
+                    let email = "";
+                    let confirmationCode = "";
+                    let path = '';
+                    let password = "";
+                    let otp = "";
+
+                    getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode);
+                    
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                    res.status(200).json({message : "pdf and csv generated!"});
                     }).catch((error) => {
-                        res.status(400).json({ message : "PDF not Generated!"});
-                    });
-                }
+                       console.log(error);
+                    res.status(400).json({ message : "PDF not Generated!"});
+               });
             }
         } catch (error) {
         console.log(error);
       res.status(400).json({error});
     }
 };
-
-async function generateCsv (req,res) {
-    let runLogId = req.params.runLogID;
-    try {
-        let dataArrays = await RunLog.find({"_id" : runLogId});
-        console.log("dataArrays --- > ", dataArrays);
-        let fields = ['runLogCode', 'runLogCount', 'totalTestCase', 'testCasePassed', 'testCaseFailed', 'testCasePending', 'projectId', 'testCaseList.testCaseCode', 'testCaseList.title', 'testCaseList.scenarioID', 'testCaseList.scenario', 'testCaseList.testDescriptions', 'testCaseList.status', 'testCaseList.testedBy', 'testCaseList.remark', 'testCaseList.imageOrAttachment', 'leadBy', 'remark', 'status', 'createdBy', 'createdOn', 'modifiedBy', 'modifiedOn'];
-        let transforms = [unwind({ paths: ['testCaseList']})];
-        console.log("transforms --- > ",transforms);
-        let json2csvParser = new Parser({ fields, transforms });
-        console.log("json2csvParser --- > ", json2csvParser);
-        let json2csvParser1 = new Parser({ fields });
-        console.log("json2csvParser1 -- > ", json2csvParser1);
-        let csv = json2csvParser.parse(dataArrays);
-        console.log(csv);
-        let csv1 = json2csvParser1.parse(dataArrays);
-        console.log(csv1);
-        res.status(200).send(csv);
-    } catch (error) {
-        res.status(400).json({message : "CSV not generated!"});
-    }
-}
 
 async function changeProjectCondition (req,res) {
     let date = new Date();
@@ -590,10 +622,9 @@ module.exports = {
     getTestCase : getTestCase,
     postTestCase : postTestCase,
     postRunLog : postRunLog,
-    generatePdf : generatePdf,
+    generatePdfAndCsv : generatePdfAndCsv,
     getFilterdProject : getFilterdProject,
     updateRunLog : updateRunLog,
     updateTestCase : updateTestCase,
-    generateCsv : generateCsv,
     changeProjectCondition : changeProjectCondition
 }

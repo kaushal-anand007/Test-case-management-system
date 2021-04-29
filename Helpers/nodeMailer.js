@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 //Importig .env here.
 require('dotenv').config();
 
-async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password) {
+async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode) {
     //using nodemailer.
     let transporter =nodemailer.createTransport({
         service: 'gmail',
@@ -58,21 +58,22 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
                 
     if (!filename == '' && !path == '') {
         mailOptions['attachments'] = [
-            { filename : filename, path : path}
+            { filename : filename, path : path }
         ]
     }
 
     if(html == 'get pdf for report'){
         mailOptions['subject'] = 'Report'
         mailOptions['attachments'] = [
-            { filename : filename, path : path}
+            { filename : filename, path : path }
         ]
     }
 
-    if(html == 'get pdf for runlog'){
-        mailOptions['subject'] = 'Run Log'
+    if(html == 'get pdf and csv for runlog'){
+        mailOptions['subject'] = `${runcode} pdf and csv`
         mailOptions['attachments'] = [
-            { filename : filename, path : path}
+            { filename : filename, path : path },
+            { filename: `${filename}.csv`, content: csv }
         ]
     }
 

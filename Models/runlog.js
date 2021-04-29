@@ -38,6 +38,10 @@ const runLogSchema = new mongoose.Schema({
         type : String
     },
 
+    scenarioID : {
+        type : String
+    },
+
     testCaseList : [{
         testCaseCode : { type : String },
         title : { type : String },
@@ -51,7 +55,9 @@ const runLogSchema = new mongoose.Schema({
     }],
 
     leadBy : {
-        type : String
+        _id : { type : String},
+        fName : { type : String},
+        lName : { type : String}
     },
 
     remark : {
@@ -69,7 +75,7 @@ const runLogSchema = new mongoose.Schema({
     status : {
         type : String,
         default : 'created',
-        enum : ['created', 'started', 'completed']
+        enum : ['created', 'started', 'pending', 'completed']
     },
 
     createdBy : {

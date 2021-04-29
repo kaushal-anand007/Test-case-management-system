@@ -41,7 +41,9 @@ const testCaseSchema=new mongoose.Schema({
     },
 
     testedBy : { 
-        type : String 
+        _id : { type : String},
+        fName : { type : String},
+        lName : { type : String}
     },
         
     remark : { 

@@ -7,7 +7,7 @@ const readFile = utils.promisify(fs.readFile);
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 
 //Converting ejs to pdf.
-function convertHtmlToPdf(Data, filename, pdfFileName) {
+function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
         return new Promise(async ( resolve, reject )=>{
             try {
                 let Path = path.resolve(`./views/pages/${filename}.ejs`);
@@ -21,11 +21,13 @@ function convertHtmlToPdf(Data, filename, pdfFileName) {
                 let fName ="";
                 let email = "";
                 let confirmationCode = "";
-                let html = "get pdf for report";
                 let filenames= `${pdfFileName}.pdf`;
                 let paths = `./PDFs/${pdfFileName}.pdf`;
+                let otp = "";
                 let password = "";
-                getMailThroughNodeMailer(fName, email, confirmationCode, html, filenames, paths, password);
+                let csv = "";
+               
+                getMailThroughNodeMailer(fName, email, confirmationCode, html, filenames, paths, otp, password, csv, runcode);
                 await browser.close();
                 resolve();
              } catch (error) {

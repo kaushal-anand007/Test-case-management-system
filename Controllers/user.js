@@ -73,7 +73,6 @@ async function registerUser (req,res) {
     }
     
     let newUserPassword = "SK" + passWord;
-    console.log("newUserPassword -- > ", newUserPassword);
     try{
      //Encrypted the password created 
      const salt = await bcrypt.genSalt(5);
@@ -255,30 +254,32 @@ async function resetPasswordAfterOtpGeneration (req,res) {
 }
 
 //Change password by role.
-async function changePasswordByRole (req, res) {
+async function resetPasswordByRole (req, res) {
     let date = new Date();
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
     let action = "password sucessfully changed!"
     let usercode = req.user.payload.user.userCode;
-    let { password, relevantData } = req.body;
+    let { userid, password, relevantData } = req.body;
+    let userId = req.params.userID;
     try {
-        let getEmail = await User.findOne({ "email" : req.params.email });
-        let actedOn = getEmail.fName;
-        if(getEmail ==null){
+        let getActedBy = await User.findOne({ "_id" : userId });
+        let getActedOn = await User.findOne({ "_id" : userid })
+        let actedOn = getActedOn.fName;
+        if(getActedOn ==null){
             res.status(400).json({message : "The user is not present"});   
         }else{
             const salt = await bcrypt.genSalt(5);
             let Password = await bcrypt.hash(password, salt);
-            let fName = req.body.fName;
-                    let email = req.body.email;
-                    let html = "roleGeneratedPassword";
-                    let filename= "";
-                    let path = "";
-                    let otp = "";
+            let fName = getActedOn.fName;
+                let email = getActedOn.email;
+                let html = "roleGeneratedPassword";
+                let filename= "";
+                let path = "";
+                let otp = "";
 
-                getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
-            await User.findOneAndUpdate({"email" : req.params.email}, {$set : {"password" : Password}});
+                getMailThroughNodeMailer(fName, email, confirmationCode  = getActedBy.confirmationCode, html, filename, path, otp, password);
+            await User.findOneAndUpdate({ "_id" : userid }, { $set : {"password" : Password} });
             await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
             res.status(200).json({ message : "Sucessfully changed the password!!!"});
         }
@@ -685,7 +686,7 @@ module.exports = {
     mailConfirm : mailConfirm,
     forgetPassword : forgetPassword,
     otpValidation : otpValidation,
-    changePasswordByRole : changePasswordByRole,
+    resetPasswordByRole : resetPasswordByRole,
     resetPasswordAfterOtpGeneration : resetPasswordAfterOtpGeneration,
     verifyuser : verifyuser,
     getFilterdUser : getFilterdUser,

@@ -7,6 +7,8 @@ function paginationResults (model) {
         let endIndex = page * limit;
         let results = {};
         let data;
+        let User;
+        let Project;
 
         if(endIndex < model.length) {
             results.next = {
