@@ -26,8 +26,8 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "The User Activated":
                     result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "The User Inactived":
-                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                case "The User Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
                     break;
                 case "Deleted user":
                     result = `${actedBy} deleted user ${actedOn} at ${date}`
@@ -50,8 +50,8 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "The role Activated":
                     result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "The role Inactived":
-                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                case "The role Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
                     break; 
                 case "Deleted role":
                     result = `${actedBy} deleted role ${actedOn} at ${date}`
@@ -65,8 +65,8 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "The feature Activated":
                     result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "The feature Inactived":
-                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
+                case "The feature Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
                     break;     
                 case "Deleted Feature":
                     result = `${actedBy} deleted feature ${actedOn} at ${date}`
@@ -101,9 +101,21 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "The project Activated":
                     result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "The project Inactived":
-                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
-                    break;    
+                case "The project Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
+                    break;
+                case "The testcase Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
+                    break;
+                case "The testcase Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
+                    break;
+                case "The runlog Activated":
+                    result = `${actedOn} activated by ${actedBy} at ${date}`
+                    break;
+                case "The runlog Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
+                    break;              
                 case "Added Report":
                     result = `${actedBy} added report at ${date}`
                     break;
@@ -113,14 +125,14 @@ function toCreateMessageforLog (actedBy, action, actedOn) {
                 case "Deleted Report":
                     result = `${actedBy} deleted report at ${date}`
                     break;                                              
-                default:
-                    break;
                 case "The report Activated":
                     result = `${actedOn} activated by ${actedBy} at ${date}`
                     break;
-                case "The report Inactived":
-                    result = `${actedOn} inactivated by ${actedBy} at ${date}`
-                break;    
+                case "The report Deactivated":
+                    result = `${actedOn} deactivated by ${actedBy} at ${date}`
+                break;
+                default:
+                    break;    
             }
             return result;
         } catch (error) {

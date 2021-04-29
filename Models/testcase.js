@@ -68,6 +68,10 @@ const testCaseSchema=new mongoose.Schema({
 
     modifiedOn : {
         type : Date
+    },
+
+    condition : {
+        type : String
     }
 });
 

@@ -134,7 +134,6 @@ async function changeFeatureCondition (req,res) {
     let featureid = req.params.featureID;
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    let usercode = req.user.payload.user.userCode;
     let action;
 
     if(condition == "Active"){
@@ -146,9 +145,10 @@ async function changeFeatureCondition (req,res) {
 
     try {
         let featureData = await Feature.findOne({"_id" : featureid});
+        let featurecode = featureData.featureCode;
         await Feature.findOneAndUpdate({ "_id" : featureid }, {$set : { "condition" : condition}});
         let actedOn = featureData.featureName;
-        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : featurecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
         res.status(200).json({message : "Changed feature status!"});
     } catch (error) {
         console.log("error --- > ",error);

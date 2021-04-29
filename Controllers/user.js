@@ -106,10 +106,10 @@ async function registerUser (req,res) {
                     let otp = "";
 
                     getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
-                    let actedBy = req.user.payload.user.fName;
-                    let actedOn = fName;
-                    let userID = user && user._id;
-                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
+                    // let actedBy = req.user.payload.user.fName;
+                    // let actedOn = fName;
+                    // let userID = user && user._id;
+                    // await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
 
                     res.status(200).json(result);
                 }).catch(error => {
@@ -321,7 +321,7 @@ async function getFilterdUser (req,res) {
 async function getUser (req,res){
     let userID = req.user.payload.userId;
     try {
-        let getUser = await User.findOne({userID});
+        let getUser = await User.findOne({"_id" : userID});
         res.status(200).json(getUser);
     } catch (error) {
         console.log("error --- > ", error);
@@ -337,7 +337,7 @@ async function getUserById (req,res) {
         let projectOutput = [];
         let testOutput = [];
         let runOutput = [];
-        let getProjectDetails = await Project.find({"members._id" : user});
+        let getProjectDetails = await Project.find({ $or : [{"members._id" : user}, {"handledBy._id" : user}]});
         let getTestCaseDetails = await TestCase.find({"userID" : user});
         let getRunlogDetails = await RunLog.find({"userID" : user});
 
@@ -665,7 +665,7 @@ async function changeUserCondition (req,res) {
         action = "The role Activated"
     }
     if(condition == "Inactive"){
-        acttion = "The role Inactived"
+        acttion = "The role Deactivated"
     }
 
     try {

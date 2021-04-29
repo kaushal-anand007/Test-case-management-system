@@ -8,7 +8,7 @@ const { getFeatureAccess } = require('../Helpers/role');
 router.post('/add/', verifyAccessTokenForUserId, RoleController.postRole);
 
 //Get role related info's.
-router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, RoleController.getRole);
+router.get('/list/', verifyAccessTokenForUserId, RoleController.getRole);
 
 //Get role related info's by id.
 router.get('/get/:roleID', verifyAccessTokenForUserId, getFeatureAccess, RoleController.getRoleById);

@@ -155,21 +155,20 @@ async function changeReportCondition (req,res) {
     let reportid = req.params.reportID;
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    let usercode = req.user.payload.user.userCode;
     let action;
 
     if(condition == "Active"){
         action = "The report Activated"
     }
     if(condition == "Inactive"){
-        acttion = "The report Inactived"
+        acttion = "The report Deactivated"
     }
 
     try {
         let reportData = await Report.findOne({"_id" : reportid});
         await Report.findOneAndUpdate({ "_id" : reportid }, {$set : { "condition" : condition}});
         let actedOn = reportData.reportCode;
-        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : actedOn, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
         res.status(200).json({message : "Changed report status!"});
     } catch (error) {
         console.log("error --- > ",error);

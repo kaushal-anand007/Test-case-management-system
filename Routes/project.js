@@ -32,7 +32,7 @@ router.get('/get-scenario/', verifyAccessTokenForUserId, getFeatureAccess, Proje
 router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);
 
 //List test case.
-router.get('/list-testcase/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCase);
+router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCase);
 
 //Get test case by id.
 router.get('/get-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCaseById);
@@ -40,14 +40,17 @@ router.get('/get-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAc
 //Update test case.
 router.put('/update-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
 
+//delete test case.
+router.delete('/delete-testcase/:testCaseID', verifyAccessTokenForUserId, ProjectController.deleteTestCase);
+
 //Remove test case.
-router.delete('/remove-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.removeTestCase);
+router.put('/remove-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.changeTestCaseCondition);
 
 //Post run log.
 router.post('/add-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postRunLog);
 
 //List run log.
-router.get('/list-runlog/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLog);
+router.get('/list-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLog);
 
 //Get run log by id.
 router.get('/get-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLogById);
@@ -55,8 +58,11 @@ router.get('/get-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess
 //Update run-log
 router.put('/update-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
 
+//Delete run-log
+router.delete('/delete-runlog/:runLogID', verifyAccessTokenForUserId, ProjectController.deleteRunlog);
+
 //Remove run-log
-router.delete('/remove-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.removeRunlog);
+router.put('/remove-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.changeRunLogCondition);
 
 //Post pdf and csv of run log.
 router.get('/runlog-pdf-csv/:runLogID', verifyAccessTokenForUserId, ProjectController.generatePdfAndCsv);

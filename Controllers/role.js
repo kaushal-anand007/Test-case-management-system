@@ -152,21 +152,21 @@ async function changeRoleCondition (req,res) {
     let roleid = req.params.roleID;
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
-    let usercode = req.user.payload.user.userCode;
     let action;
 
     if(condition == "Active"){
         action = "The role Activated"
     }
     if(condition == "Inactive"){
-        acttion = "The role Inactived"
+        acttion = "The role Deactivated"
     }
 
     try {
         let roleData = await Role.findOne({"_id" : roleid});
+        let rolecode = roleData.roleCode;
         await Role.findOneAndUpdate({"_id" : roleid}, {$set : { "condition" : condition }});
         let actedOn = roleData.roleName;
-        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
         res.status(200).json({message : "Changed role status!"});
     } catch (error) {
         console.log("error --- > ",error);

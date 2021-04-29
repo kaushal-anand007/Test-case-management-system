@@ -49,7 +49,11 @@ const runLogSchema = new mongoose.Schema({
         scenario : { type : String },
         testDescriptions : { type : String },
         status : { type : String },
-        testedBy : { type : String },
+        testedBy : { 
+            _id : { type : String},
+            fName : { type : String},
+            lName : { type : String}
+        },
         remark : { type : String },
         imageOrAttachment : { type : String }
     }],
@@ -92,6 +96,10 @@ const runLogSchema = new mongoose.Schema({
 
     modifiedOn : {
         type : Date
+    },
+
+    condition : {
+        type : String
     }
 })
 
