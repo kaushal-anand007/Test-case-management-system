@@ -60,6 +60,7 @@ async function registerUser (req,res) {
 
     //Generating conformation code.
     const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
     let token = '';
 
     for (let i = 0; i < 25; i++) {
@@ -67,11 +68,11 @@ async function registerUser (req,res) {
     }
 
     let confirmationCode = token;
-    let passWord;
+    let passWord = '';
     for (let i = 0; i < 5; i++) {
         passWord += characters[Math.floor(Math.random() * characters.length )];
     }
-    
+   
     let newUserPassword = "SK" + passWord;
     try{
      //Encrypted the password created 
@@ -106,10 +107,10 @@ async function registerUser (req,res) {
                     let otp = "";
 
                     getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
-                    // let actedBy = req.user.payload.user.fName;
-                    // let actedOn = fName;
-                    // let userID = user && user._id;
-                    // await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
+                    let actedBy = req.user.payload.user.fName;
+                    let actedOn = fName;
+                    let userID = user && user._id;
+                    await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
 
                     res.status(200).json(result);
                 }).catch(error => {
@@ -261,9 +262,8 @@ async function resetPasswordByRole (req, res) {
     let action = "password sucessfully changed!"
     let usercode = req.user.payload.user.userCode;
     let { userid, password, relevantData } = req.body;
-    let userId = req.params.userID;
     try {
-        let getActedBy = await User.findOne({ "_id" : userId });
+        let getActedBy = await User.findOne({ "_id" : userID });
         let getActedOn = await User.findOne({ "_id" : userid })
         let actedOn = getActedOn.fName;
         if(getActedOn ==null){
@@ -287,7 +287,7 @@ async function resetPasswordByRole (req, res) {
        console.log("error --- > ",error);
        res.status(400).json({ message : error});
     }
-}
+};
 
 //Get all user details.
 async function getRegisteredUser (req,res) {
@@ -662,10 +662,10 @@ async function changeUserCondition (req,res) {
     let action;
 
     if(condition == "Active"){
-        action = "The role Activated"
+        action = "The user Activated"
     }
     if(condition == "Inactive"){
-        acttion = "The role Deactivated"
+        acttion = "The user Deactivated"
     }
 
     try {

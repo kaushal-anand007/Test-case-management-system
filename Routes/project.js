@@ -11,7 +11,7 @@ const { getFeatureAccess } = require('../Helpers/role');
 router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
 //Get project data.
-router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getProject);
+router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, paginationResults(Project), ProjectController.getProject);
 
 //Get filtered data.
 router.get('/filtered-list', ProjectController.getFilterdProject);
@@ -26,7 +26,7 @@ router.put('/update/:projectID', verifyAccessTokenForUserId, getFeatureAccess, P
 router.post('/add-scenario/:projectID', verifyAccessTokenForUserId, ProjectController.postScenario);
 
 //Get scenario
-router.get('/get-scenario/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getScenario);
+router.get('/get-scenario/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getScenario);
 
 //Post test case.
 router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);

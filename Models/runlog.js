@@ -99,7 +99,9 @@ const runLogSchema = new mongoose.Schema({
     },
 
     condition : {
-        type : String
+        type : String,
+        default : 'Active',
+        enum : ['Active', 'Inactive']
     }
 })
 

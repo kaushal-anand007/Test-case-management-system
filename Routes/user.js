@@ -43,7 +43,7 @@ router.get('/logs/', verifyAccessTokenForUserId, getFeatureAccess, UserControlle
 router.post('/change-password/:userID', verifyAccessTokenForUserId, UserController.updatePassword);
 
 //Change password by role.
-router.post('/role-change-password/:userID', verifyAccessTokenForUserId, UserController.resetPasswordByRole);
+router.post('/role-change-password/', verifyAccessTokenForUserId, UserController.resetPasswordByRole);
 
 //Get all registered user.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, paginationResults(User), UserController.getRegisteredUser);

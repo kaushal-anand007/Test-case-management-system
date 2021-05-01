@@ -75,8 +75,7 @@ async function postProject (req,res) {
 //Function to list all the project.
 async function getProject (req,res) {
     try {
-        let result = await Project.find({"condition" : "Active"}).sort({_id : -1});
-        res.status(200).json(result);
+        res.json(res.paginationResults);
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -220,7 +219,7 @@ async function postScenario (req, res) {
 //Function to get all scenario.
 async function getScenario (req,res){
     try {
-        let result = await Scenario.find().sort({_id : -1});
+        let result = await Scenario.find({"projectId" : req.params.projectID}).sort({_id : -1});
         res.status(200).json(result);
     } catch (error) {
         console.log(error);
@@ -280,7 +279,7 @@ async function postTestCase (req,res){
 //Function to get all test cases.
 async function getTestCase (req,res) {
     try {
-        let result = await TestCase.find({"projectID" : req.params.projectID}).sort({_id : -1});
+        let result = await TestCase.find({$and : [{"projectID" : req.params.projectID}, {"condition" : "Active"}]}).sort({_id : -1});
         res.status(200).json(result);
     } catch (error) {
         console.log(error);
@@ -446,7 +445,7 @@ async function postRunLog (req,res) {
         let { runLogCount, remark, imageOrAttachment, scenarioID, filename, pdfFileName, status, relevantData } = req.body;
         let runLogObj = { runLogCode, runLogCount, totalTestCase, testCasePassed, testCaseFailed, testCasePending, "userID" : userID, "projectId" : projectId, testCaseList, "leadBy" : { "_id" : userID, "fName" : actedBy, "lName" : lname}, remark, imageOrAttachment, filename, pdfFileName, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date};
 
-        let getTestCase = await TestCase.find({ "scenarioID" : scenarioID });
+        let getTestCase = await TestCase.find({ $and : [{"scenarioID" : scenarioID}, {"condition" : "Active"}] });
         console.log("getTestCase -- > ", getTestCase);
 
         if(runLogCount == "" || remark == "" || status == ""){
@@ -485,7 +484,7 @@ async function postRunLog (req,res) {
 //get all run log.
 async function getRunLog (req,res){
     try {
-        let result = await RunLog.find({"projectId" : req.params.projectID}).sort({_id : -1});
+        let result = await RunLog.find({$and : [{"projectId" : req.params.projectID}, {"condition" : "Active"}]}).sort({_id : -1});
         res.status(200).json(result);
     } catch (error) {
         console.log(error);
@@ -653,7 +652,7 @@ async function changeProjectCondition (req,res) {
     }
     if(condition == "Inactive"){
         acttion = "The project Deactivated"
-    }
+    }   
 
     try {
         let projectData = await Project.findOne({"_id" : projeictd});
