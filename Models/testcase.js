@@ -50,9 +50,9 @@ const testCaseSchema=new mongoose.Schema({
         type : String 
     },
 
-    imageOrAttachment : {
-        type : String
-    },
+    imageOrAttachment : [
+        {type : String}
+    ],
 
     createdBy : {
         type : String
@@ -74,7 +74,9 @@ const testCaseSchema=new mongoose.Schema({
         type : String,
         default : 'Active',
         enum : ['Active', 'Inactive']
-    }
+    },
+
+    role : { type : String }
 });
 
 module.exports = mongoose.model('TestCase',testCaseSchema);

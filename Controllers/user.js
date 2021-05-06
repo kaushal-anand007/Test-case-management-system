@@ -342,17 +342,17 @@ async function getUserById (req,res) {
         let getRunlogDetails = await RunLog.find({"userID" : user});
 
         getProjectDetails.forEach(function(r,i){
-            let projectObj = Object.assign({},{projectCode:r.projectCode,nameOfProject:r.nameOfProject,status:r.status,startDate:r.startDate,endDate:r.endDate});
+            let projectObj = Object.assign({},{_id:r._id,projectCode:r.projectCode,nameOfProject:r.nameOfProject,status:r.status,startDate:r.startDate,endDate:r.endDate});
             projectOutput.push(projectObj);
         });
 
         getTestCaseDetails.forEach(function(r,i){
-            let testcaseobj = Object.assign({},{testCaseCode:r.testCaseCode,title:r.title,testDescriptions:r.testDescriptions,scenario:r.scenario,status:r.status,testedBy:r.testedBy,remark:r.remark});
+            let testcaseobj = Object.assign({},{_id:r._id,testCaseCode:r.testCaseCode,title:r.title,testDescriptions:r.testDescriptions,scenario:r.scenario,status:r.status,testedBy:r.testedBy,remark:r.remark});
             testOutput.push(testcaseobj);
         });
 
         getRunlogDetails.forEach(function(r,i){
-            let runlogobj = Object.assign({},{runLogCode:r.runLogCode,runLogCount:r.runLogCount,totalTestCase:r.totalTestCase,testCasePassed:r.testCasePassed,testCaseFailed:r.testCaseFailed,testCasePending:r.testCasePending,leadBy:r.leadBy,remark:r.remark,status:r.status});
+            let runlogobj = Object.assign({},{_id:r._id,runLogCode:r.runLogCode,runLogCount:r.runLogCount,totalTestCase:r.totalTestCase,testCasePassed:r.testCasePassed,testCaseFailed:r.testCaseFailed,testCasePending:r.testCasePending,leadBy:r.leadBy,remark:r.remark,status:r.status});
             runOutput.push(runlogobj);
         });
 

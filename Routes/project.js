@@ -11,7 +11,7 @@ const { getFeatureAccess } = require('../Helpers/role');
 router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
 //Get project data.
-router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, paginationResults(Project), ProjectController.getProject);
+router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getProject);
 
 //Get filtered data.
 router.get('/filtered-list', ProjectController.getFilterdProject);
@@ -64,8 +64,11 @@ router.delete('/delete-runlog/:runLogID', verifyAccessTokenForUserId, ProjectCon
 //Remove run-log
 router.put('/remove-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.changeRunLogCondition);
 
-//Post pdf and csv of run log.
-router.get('/runlog-pdf-csv/:runLogID', verifyAccessTokenForUserId, ProjectController.generatePdfAndCsv);
+//Post pdf of run log.
+router.get('/runlog-pdf/:runLogID', verifyAccessTokenForUserId, ProjectController.generatePdf);
+
+//Post csv of run log.
+router.get('/runlog-csv/:runLogID', verifyAccessTokenForUserId, ProjectController.convertJsonToCsv);
 
 //delete project.
 router.delete('/delete/:projectID', verifyAccessTokenForUserId, ProjectController.deleteProject);

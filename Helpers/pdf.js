@@ -31,7 +31,7 @@ function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
                 await browser.close();
                 resolve();
              } catch (error) {
-                console.log("error ---  > ",error);
+                console.log("error ---  > ", error);
                 reject(error);
              }
         }); 

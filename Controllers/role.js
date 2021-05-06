@@ -12,7 +12,6 @@ function getNextSequenceValue(sequenceName){
                 $set : { role : sequenceName},
                 $inc : { sequenceValue: 1 }
              },{upsert: true, returnNewDocument:true}).then( (result) => {
-                console.log(result);
                 resolve(result ?  parseInt(result.sequenceValue)+1 : 1);
              })
              .catch( (error) => {
@@ -36,27 +35,49 @@ async function postRole (req,res) {
             res.json({ message : "Please fill all the fields"});
         }else{
             getNextSequenceValue("RoleCode").then(async data=>{
-            Role.findOne({"roleName" : roleName}, async function(err, result){ 
-                if(err) { res.json({ message : err})}
-                   if(result) {res.json({ message : "Duplicate Role!!" })}
-                   else{ 
-                    let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList, "userID" : userID, "createdBy" : actedBy, "createdOn" : date};
-                    let rolecode = 'R'+ data;
-                    console.log("rolecode --- >", rolecode);    
-                    roleObj.roleCode = rolecode;  
-                    await Role.create(roleObj);
-                        let result = {
-                            status : "success",
-                                data : "Role sucessfully Added!!"
-                                  }
-                                  await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});                                
-                                  res.status(200).json(result);
-                           }
-                        });   
-                    }).catch(error => {
-                res.status(400).json( { message : error });
-            });    
-        }
+                let roleObj = { roleCode, roleName, createdBy, createdOn : date, "featureList" : featureList, "userID" : userID, "createdBy" : actedBy, "createdOn" : date};
+                let rolecode = 'R'+ data;
+                switch (roleName) {
+                    case "Admin":
+                        getNextSequenceValue("Admin").then(async data1 =>{
+                            roleObj["roleName"] = roleName + " " + data1; 
+                            roleObj["roleCode"] = rolecode; 
+                            await Role.create(roleObj);
+                        });
+                        break;
+                    case "QA Manager":
+                        getNextSequenceValue("QA Manager").then(async data2 =>{
+                            roleObj["roleName"] = roleName + " " + data2; 
+                            roleObj["roleCode"] = rolecode; 
+                            await Role.create(roleObj);
+                        });
+                        break;
+                    case "QA Lead":
+                        getNextSequenceValue("QA Lead").then(async data3 =>{
+                            roleObj["roleName"] = roleName + " " + data3; 
+                            roleObj["roleCode"] = rolecode; 
+                            await Role.create(roleObj);
+                        });
+                        break;
+                    case "Tester":
+                        getNextSequenceValue("Tester").then(async data4 =>{
+                            roleObj["roleName"] = roleName + " " + data4; 
+                            roleObj["roleCode"] = rolecode; 
+                            await Role.create(roleObj);
+                        });
+                        break;          
+                    default:
+                        console.log("The required choice is not available!");
+                        break;
+                };
+                await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : rolecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                let result = {
+                    status : "success",
+                    data : "Role sucessfully Added!!"
+                }                                
+                res.status(200).json(result);
+            });
+        }    
     } catch (error) {
         console.log(error);
         res.status(400).json({ message :  error }); 

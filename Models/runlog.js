@@ -5,11 +5,6 @@ const runLogSchema = new mongoose.Schema({
         type : String
     },
 
-    runLogCount : {
-        type : Number,
-        default : 0
-    },
-
     totalTestCase : {
         type : Number,
         default : 0
@@ -55,7 +50,7 @@ const runLogSchema = new mongoose.Schema({
             lName : { type : String}
         },
         remark : { type : String },
-        imageOrAttachment : { type : String }
+        imageOrAttachment : [{type : String}]
     }],
 
     leadBy : {
@@ -102,7 +97,9 @@ const runLogSchema = new mongoose.Schema({
         type : String,
         default : 'Active',
         enum : ['Active', 'Inactive']
-    }
+    },
+
+    role : { type : String }
 })
 
 module.exports = mongoose.model('RunLog', runLogSchema);

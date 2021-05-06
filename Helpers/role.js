@@ -13,7 +13,7 @@ async function getFeatureAccess(req, res, next){
             let flag = false;
             let route = req.originalUrl;
             
-            route =route.slice(1);
+            route =route.slice(1);  
             let index = route.indexOf('/');
             let lastIndex = route.lastIndexOf('/');
             module = route.slice(0,index);

@@ -64,7 +64,9 @@ const projectSchema=new mongoose.Schema({
         type : String,
         default : 'Active',
         enum : ['Active', 'Inactive']
-    }
+    },
+
+    role : { type : String }
 }); 
 
 module.exports = mongoose.model('Project', projectSchema);
