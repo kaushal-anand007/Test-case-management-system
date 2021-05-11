@@ -31,6 +31,9 @@ router.get('/get-scenario/:projectID', verifyAccessTokenForUserId, getFeatureAcc
 //Post test case.
 router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);
 
+//Get test case from imported csv file.
+router.get('/get-json-csv', verifyAccessTokenForUserId, ProjectController.getjsonfromcsv);
+
 //List test case.
 router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCase);
 

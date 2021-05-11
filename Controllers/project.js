@@ -10,6 +10,7 @@ const Scenario = require('../Models/scenario');
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 const { Parser, transforms: { unwind }  } = require('json2csv');
 const User = require('../Models/user');
+const csvtojson = require("csvtojson");
 
 //Function to auto increment the usercode.
 function getNextSequenceValue(sequenceName){
@@ -58,6 +59,23 @@ async function postProject (req,res) {
                                 message : " Project has sucessfully created "
                             }
                         }
+
+                        let fName = "";
+                        let email = "";
+                        let confirmationCode = "";
+                        let path = '';
+                        let password = "";
+                        let otp = "";
+                        let html = "get deatils about project";
+                        let csv = "";
+                        let runcode = "";
+                        let filename = projectcode;
+                        let member = [];
+                        for(let i=0;i<members.length;i++){
+                            member.push(members[i].fName);
+                        }
+            
+                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, nameOfProject, handledBy, projectDescription, member, startDate, endDate);
                         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         res.status(200).json(result);
                      }).catch(error => {
@@ -279,12 +297,32 @@ async function postTestCase (req,res){
                         let testcasecode = 'TC'+ data;    
                         testCaseObj.testCaseCode = testcasecode;
                         let getScenario = await Scenario.findOne({"_id" : scenarioID});
-                        console.log("getScenario --- > ", getScenario);
                         testCaseObj["scenario"] = getScenario.title;
                         let testCaseResult = await TestCase.create(testCaseObj);
                         if(getScenario != null){
                             await RunLog.findOneAndUpdate({"scenarioID" : scenarioID}, {$push : {"testCaseList" : testCaseResult}, $inc : {"totalTestCase" : 1, "testCasePending" : 1}, $set : {"status" : "pending"}});
                         }
+
+                        let fName = "";
+                        let email = "";
+                        let confirmationCode = "";
+                        let path = '';
+                        let password = "";
+                        let otp = "";
+                        let html = "get deatils about test case";
+                        let csv = "";
+                        let runcode = "";
+                        let filename = testcasecode;
+                        let member = "";
+                        let startDate = "";
+                        let endDate = "";
+                        let projectDescription = "";
+                        let handledBy = "";
+                        let nameOfProject = "";
+                        scenario = getScenario.title;
+                        let Date = date.toDateString();
+            
+                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date, Time);
                         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         res.status(200).json({message : "Successfully added test case"});
                             }).catch(error => {
@@ -297,7 +335,22 @@ async function postTestCase (req,res){
             res.status(400).json({ message : error});
         } 
     }
-}
+};
+
+//Function to json testcase from csv file.
+async function getjsonfromcsv (req,res) {
+    try {
+        let csvFilePath = '/home/kaushal/Documents/test.csv';
+        let jsonArray = await csvtojson().fromFile(csvFilePath);
+        let testObj = Object.assign({},jsonArray);
+        let result = Object.values(testObj);
+        console.log("result --- > ", result);
+        await TestCase.create(result);
+        res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
+    } catch (error) {
+        res.status(400).json({ message : error });
+    }
+} 
 
 //Function to get all test cases
 async function getTestCase (req,res) {
@@ -339,7 +392,7 @@ async function updateTestCase (req,res) {
             "fName" : actedBy,
             "lName" : lname
         };
-
+        console.log("tested by --- > ", testedBy);
         if(Data == null){
             res.status(400).json({ message : "The required test case is not present!"})
         }else{
@@ -351,17 +404,18 @@ async function updateTestCase (req,res) {
             if(testDescriptions) {
                 setQuery["testDescriptions"] = testDescriptions;
             }
+            if(testedBy){
+                setQuery["testedBy"] = testedBy;
+            }
             if(status) {
                 setQuery["status"] = status;
-            }
-            if(testedBy) {
-                setQuery["testedBy"] = testedBy;
             }
             if(remark) {
                 setQuery["remark"] = remark;
             }
            
             await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, $push :  { "imageOrAttachment" : imageOrAttachment } ,"modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy});
+            await TestCase.findOneAndUpdate({"_id" : testcaseId}, {$set : {"testedBy" : testedBy}});
 
             let statusData = Data.status;
 
@@ -726,6 +780,7 @@ module.exports = {
     deleteTestCase : deleteTestCase,
     changeTestCaseCondition : changeTestCaseCondition,
     getTestCase : getTestCase,
+    getjsonfromcsv : getjsonfromcsv,
     postTestCase : postTestCase,
     postRunLog : postRunLog,
     generatePdf : generatePdf,

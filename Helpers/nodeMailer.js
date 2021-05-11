@@ -1,9 +1,11 @@
-const nodemailer = require('nodemailer');   
+const nodemailer = require('nodemailer');  
+let date = new Date();
+let time = date.toTimeString(); 
 
 //Importig .env here.
 require('dotenv').config();
 
-async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode) {
+async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date) {
     //using nodemailer.
     let transporter =nodemailer.createTransport({
         service: 'gmail',
@@ -81,6 +83,29 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
         mailOptions['attachments'] = [
             { filename: `${filename}.csv`, content: csv }
         ]
+    }
+
+    if(html == 'get deatils about project'){
+        mailOptions['subject'] = `${filename} is created by ${handledBy.fName}`
+        mailOptions['html'] =  `<div>
+                                     <p><b>Project Name :-</b> ${nameOfProject}</p>
+                                     <p><b>Project Description :-</b> ${projectDescription}</p>
+                                     <p><b>Members of Project:-</b> ${member}</p>
+                                     <p><b>Starting date of projct :-</b> ${startDate}</p>
+                                     <p><b>End date of projct :-</b> ${endDate}</p>
+                                     <p><b>At :-</b> ${time}</p>
+                                </div>`
+    }
+
+    if(html == 'get deatils about test case'){
+        mailOptions['subject'] = `${filename} is created by ${actedBy}`
+        mailOptions['html'] =  `<div>
+                                     <p><b>Test title :-</b> ${title}</p>
+                                     <p><b>Test case description :-</b> ${testDescriptions}</p>
+                                     <p><b>Scenario :-</b> ${scenario}</p>
+                                     <p><b>Test case created on :-</b> ${Date}</p>
+                                     <p><b>At :-</b> ${time}</p>
+                                </div>`
     }
 
     transporter.sendMail(mailOptions , function(err, data){

@@ -337,9 +337,9 @@ async function getUserById (req,res) {
         let projectOutput = [];
         let testOutput = [];
         let runOutput = [];
-        let getProjectDetails = await Project.find({ $or : [{"members._id" : user}, {"handledBy._id" : user}]});
-        let getTestCaseDetails = await TestCase.find({"userID" : user});
-        let getRunlogDetails = await RunLog.find({"userID" : user});
+        let getProjectDetails = await Project.find({ "condition" : "Active", $or : [{"members._id" : user}, {"handledBy._id" : user}]});
+        let getTestCaseDetails = await TestCase.find({"condition" : "Active" , "userID" : user});
+        let getRunlogDetails = await RunLog.find({"condition" : "Active" , "userID" : user});
 
         getProjectDetails.forEach(function(r,i){
             let projectObj = Object.assign({},{_id:r._id,projectCode:r.projectCode,nameOfProject:r.nameOfProject,status:r.status,startDate:r.startDate,endDate:r.endDate});

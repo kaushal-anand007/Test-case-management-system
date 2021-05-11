@@ -12,7 +12,7 @@ function paginationResults (model) {
         if(endIndex < model.length) {
             results.next = {
                 page: page+1,
-                limit: limit
+                limit: limit                    
             }
         }
 
@@ -25,37 +25,42 @@ function paginationResults (model) {
 
         let data = { "condition" : "Active" };
         let index = userRole.lastIndexOf(' ');
-        let roles = userRole.slice(0,index);
+        let role = userRole.slice(0,index);
         let roleObj = [];
 
         try {
-            let output1 = await model.find(data).limit(limit).skip(startIndex).exec();
+            
+            let modelOutput = await model.find(data).limit(limit).skip(startIndex).exec();
             let output = [];
 
-            if(roles == 'Admin'){
+            if(role == 'Admin'){
                 roleObj = ['Admin','QA Manager','QA Lead','Tester']
             }
 
-            if(roles == 'QA Manager'){
+            if(role == 'QA Manager'){
                 roleObj = ['QA Manager','QA Lead','Tester']
             }
 
-            if(roles == 'QA Lead'){
+            if(role == 'QA Lead'){
                 roleObj = ['QA Lead','Tester']
             }
 
-            if(roles == 'Tester'){
+            if(role == 'Tester'){  
                 roleObj = ['Tester']
             }
-
-            for(let i=0;i<output1.length;i++){
-                let getRole = output1[i].role;
-                let index1 = getRole.lastIndexOf(' ');
-                let role1 = getRole.slice(0,index1);
-                for(let j=0;j<roleObj.length;j++){
-                    if(role1 == roleObj[j]){
-                        let finalResult = output1[i];
-                        output.push(finalResult);
+            
+            for(let i=0;i<modelOutput.length;i++){
+                let getRole = modelOutput[i].role;
+                if(getRole == null){
+                    output.push(modelOutput[i]);
+                    continue;
+                }else{
+                    let indexOfRoleObj = getRole.lastIndexOf(' ');
+                    let roleFromRoleObj = getRole.slice(0,indexOfRoleObj);
+                    for(let j=0;j<roleObj.length;j++){
+                        if(roleFromRoleObj == roleObj[j]){
+                            output.push(modelOutput[i]);
+                        }
                     }
                 }
             }

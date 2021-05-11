@@ -6,8 +6,8 @@ const cors =require("cors");
 const ejs = require("ejs");
 const path = require("path");
 const fs = require("fs");
-//const ejs = require('ejs');
-const Report =require('./Models/report');
+const Report = require('./Models/report');
+const RunLog = require('./Models/runlog');
 
 //INSTANCE of express
 const app=express();
@@ -46,5 +46,19 @@ app.use('/project', projectRoute);
 const reportRoute=require('./Routes/report');
 app.use('/report', reportRoute);
 
-//How we start listening the server(port).
+app.get('/getPDF', (req,res) => {
+    let getpdf = req.query;
+    console.log("getpdf", getpdf);
+    let result = Object.values(getpdf);
+    console.log("result --- > ",result);
+    res.sendFile(`/home/kaushal/Pictures/${result}`, (error, data) => {
+    if (error) {
+        console.error(error);
+    return;
+        }
+      console.log("sucessfully fetched pdf file");
+    });
+})
+
+//Start listening the server(port).
 app.listen(3000, () => {console.log("Listening on port 3000...")});
