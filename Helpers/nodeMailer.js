@@ -91,8 +91,8 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
                                      <p><b>Project Name :-</b> ${nameOfProject}</p>
                                      <p><b>Project Description :-</b> ${projectDescription}</p>
                                      <p><b>Members of Project:-</b> ${member}</p>
-                                     <p><b>Starting date of projct :-</b> ${startDate}</p>
-                                     <p><b>End date of projct :-</b> ${endDate}</p>
+                                     <p><b>Starting date of project :-</b> ${startDate}</p>
+                                     <p><b>End date of project :-</b> ${endDate}</p>
                                      <p><b>At :-</b> ${time}</p>
                                 </div>`
     }

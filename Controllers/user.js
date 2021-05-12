@@ -10,11 +10,11 @@ const TestCase = require('../Models/testcase');
 const RunLog = require('../Models/runlog');
 const moment = require('moment');
 const RoleCounter = require('../Models/counter');
-const nodemailer = require('nodemailer');
 const { Mongoose } = require('mongoose');
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 const Role = require('../Models/role');
 const toCreateMessageforLog = require('../Helpers/log');
+const ejs = require("ejs");
 
 //Importig .env here.
 require('dotenv').config();
@@ -130,24 +130,37 @@ async function registerUser (req,res) {
 async function verifyuser (req,res) {
     try {
         let user = await User.findOne({ "confirmationCode" : req.params.confirmationCode});
+        let email = user.email;
+        let emailLength = email.length;
+        let midLenght = Math.round(emailLength/2);
+        let midOfMid = Math.round(midLenght/2);
+        //let index = email.indeOf()
+        let cropEmail = email.slice(midLenght-midOfMid-1,midLenght+midOfMid);
+        let replacedString = 2*(midOfMid)+1;
+        let output = '';
+        for(let i=0;i<replacedString;i++){
+            output += '*';
+        }
+        let emailAfterReplacing = email.replace(cropEmail,output);
         if(user.status == "Active"){
-            res.sendFile("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/index1.html");
+            let email = user.email;
+            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index1.ejs", {"email" : emailAfterReplacing});
         }else{
             let fName = "";
             let email = user.email;
             let html = "";
             let filename = user.filename;
             let path =user.path;
-            let password = ""
+            let password = "";
 
             await User.updateOne({"confirmationCode" : req.params.confirmationCode}, {$set : { "status" : "Active" , "verification.emailConfirmation" : "Confirmed"}});
 
             getMailThroughNodeMailer( fName, email, confirmationCode = "", html, filename, path, password );
-            res.sendFile("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/index.html");
+            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index.ejs", {"email" : emailAfterReplacing});
         }
     } catch (error) {
         console.log("error --- > ",error)
-        return res.status(400).json({ message: "UnAuthorized! please contact admin." });
+        res.status(400).json({ message: "UnAuthorized! please contact admin." });
     }   
 }
 
