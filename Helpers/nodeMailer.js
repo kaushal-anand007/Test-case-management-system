@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');  
 let date = new Date();
-let time = date.toTimeString(); 
+let time = date.toLocaleTimeString();
 
 //Importig .env here.
 require('dotenv').config();
 
-async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date) {
+async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date, Time) {
     //using nodemailer.
     let transporter =nodemailer.createTransport({
         service: 'gmail',
@@ -72,7 +72,10 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
     }
 
     if(html == 'get pdf for runlog'){
-        mailOptions['subject'] = `${runcode} pdf`
+        mailOptions['subject'] = `Report for runlog`
+        mailOptions['html'] =  `<div>
+                                     <p>Please find attached pdf below</p>
+                                </div>`
         mailOptions['attachments'] = [
             { filename : filename, path : path }
         ]
@@ -86,25 +89,25 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
     }
 
     if(html == 'get deatils about project'){
-        mailOptions['subject'] = `${filename} is created by ${handledBy.fName}`
+        mailOptions['subject'] = `A new project is created by ${handledBy.fName}`
         mailOptions['html'] =  `<div>
                                      <p><b>Project Name :-</b> ${nameOfProject}</p>
                                      <p><b>Project Description :-</b> ${projectDescription}</p>
                                      <p><b>Members of Project:-</b> ${member}</p>
                                      <p><b>Starting date of project :-</b> ${startDate}</p>
                                      <p><b>End date of project :-</b> ${endDate}</p>
-                                     <p><b>At :-</b> ${time}</p>
+                                     <p><b>Time at which project is created :-</b> ${time}</p>
                                 </div>`
     }
 
     if(html == 'get deatils about test case'){
-        mailOptions['subject'] = `${filename} is created by ${actedBy}`
+        mailOptions['subject'] = `A new test case is created by ${actedBy}`
         mailOptions['html'] =  `<div>
                                      <p><b>Test title :-</b> ${title}</p>
                                      <p><b>Test case description :-</b> ${testDescriptions}</p>
                                      <p><b>Scenario :-</b> ${scenario}</p>
                                      <p><b>Test case created on :-</b> ${Date}</p>
-                                     <p><b>At :-</b> ${time}</p>
+                                     <p><b>Time at which project is created :-</b> ${time}</p>
                                 </div>`
     }
 

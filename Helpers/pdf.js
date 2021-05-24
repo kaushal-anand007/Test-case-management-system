@@ -5,6 +5,7 @@ const fs = require('fs');
 const utils = require('util');
 const readFile = utils.promisify(fs.readFile);
 const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
+const Project = require('../Models/project');
 
 //Converting ejs to pdf.
 function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
@@ -26,8 +27,14 @@ function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
                 let otp = "";
                 let password = "";
                 let csv = "";
+                let data = Data.projectId;
+                console.log("data --- > ", data);
+                let findProject = await Project.findOne({"_id" : data});
+                console.log("findProject --- > ", findProject);
+                let projectName = findProject.nameOfProject
+
                
-                getMailThroughNodeMailer(fName, email, confirmationCode, html, filenames, paths, otp, password, csv, runcode);
+                getMailThroughNodeMailer(fName, email, confirmationCode, html, filenames, paths, otp, password, csv, runcode, projectName);
                 await browser.close();
                 resolve();
              } catch (error) {

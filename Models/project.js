@@ -13,7 +13,8 @@ const projectSchema=new mongoose.Schema({
     handledBy : {
         _id : { type : String},
         fName : { type : String},
-        lName : { type : String}
+        lName : { type : String},
+        role : {type : String}
     },
 
     projectDescription : {
@@ -23,7 +24,8 @@ const projectSchema=new mongoose.Schema({
     members : [{
         _id : { type : String },
         fName : { type : String },
-        lName : { type : String }
+        lName : { type : String },
+        role : {type : String}
     }],
 
     startDate : {
@@ -44,6 +46,10 @@ const projectSchema=new mongoose.Schema({
         enum : ['created','pending', 'progress', 'complete', 'rejected']
     },
 
+    attachments : [{
+        type : String
+    }],
+
     createdBy : {
         type : String
     },
@@ -58,6 +64,10 @@ const projectSchema=new mongoose.Schema({
 
     modifiedOn : {
         type : Date
+    },
+
+    csvPath : {
+        type : String
     },
 
     condition : {

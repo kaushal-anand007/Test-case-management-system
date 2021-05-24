@@ -134,7 +134,6 @@ async function verifyuser (req,res) {
         let emailLength = email.length;
         let midLenght = Math.round(emailLength/2);
         let midOfMid = Math.round(midLenght/2);
-        //let index = email.indeOf()
         let cropEmail = email.slice(midLenght-midOfMid-1,midLenght+midOfMid);
         let replacedString = 2*(midOfMid)+1;
         let output = '';

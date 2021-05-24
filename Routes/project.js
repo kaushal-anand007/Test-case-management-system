@@ -32,7 +32,7 @@ router.get('/get-scenario/:projectID', verifyAccessTokenForUserId, getFeatureAcc
 router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);
 
 //Get test case from imported csv file.
-router.get('/get-json-csv', verifyAccessTokenForUserId, ProjectController.getjsonfromcsv);
+router.post('/get-json-csv', verifyAccessTokenForUserId, ProjectController.getjsonfromcsv);
 
 //List test case.
 router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCase);
@@ -50,7 +50,7 @@ router.delete('/delete-testcase/:testCaseID', verifyAccessTokenForUserId, Projec
 router.put('/remove-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.changeTestCaseCondition);
 
 //Post run log.
-router.post('/add-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postRunLog);
+router.get('/add-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postRunLog);
 
 //List run log.
 router.get('/list-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLog);
