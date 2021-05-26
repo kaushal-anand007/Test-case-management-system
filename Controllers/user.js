@@ -103,13 +103,12 @@ async function registerUser (req,res) {
                     let filename= "";
                     let path = "";
                     let password = newUserPassword;
-                    console.log("password -- > ", password);
                     let otp = "";
 
                     getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
                     let actedBy = req.user.payload.user.fName;
                     let actedOn = fName;
-                    let userID = user && user._id;
+                    let userID = req.user.payload.userId;
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)}); 
 
                     res.status(200).json(result);
@@ -425,7 +424,7 @@ async function updateStatus (req,res) {
         console.log(error);
         res.status(400).json({ message : error });
     }
-}
+};
 
 //Update user by id.
 async function updateUserById (req,res) {
@@ -512,7 +511,7 @@ async function logout (req,res) {
 //Get log details by it. 
 async function logDetails (req,res) {
     try {
-        let logDetails = await Log.find({ UserID : req.params.userID});
+        let logDetails = await Log.find({ UserID : req.params.userID}).sort({_id : -1});
         res.status(200).json(logDetails);
     } catch (error) {
        console.log(error);
@@ -545,7 +544,10 @@ async function login (req,res) {
         }else {
         let user = await User.findOne({email: email});
         if(user != null){
-            let usercode = user.userCode;
+            if(user.role == null){
+                res.status(400).json({message : "The role is not been assign! Please contact Admin."})
+            }else{
+                let usercode = user.userCode;
             let actedBy = user.fName;    
             //Current date and time.
             let date = new Date();
@@ -590,6 +592,7 @@ async function login (req,res) {
             }else{
                     res.status(400).json({message : "Unauthorized. Please contact admin!"});
             }
+          }
         }else{
             res.status(400).json({ message : "user is not present!!"});
         }

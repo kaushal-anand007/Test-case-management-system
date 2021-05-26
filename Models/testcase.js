@@ -50,9 +50,17 @@ const testCaseSchema=new mongoose.Schema({
         type : String 
     },
 
-    imageOrAttachment : [
-        {type : String}
-    ],
+    imageOrAttachment : [{
+        type : String
+    }],
+
+    additionalImageOrAttachment : [{
+        type : String
+    }],
+
+    videoAttachment : [{
+        type : String
+    }],
 
     createdBy : {
         type : String

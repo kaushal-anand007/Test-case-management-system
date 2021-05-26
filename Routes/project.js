@@ -6,9 +6,74 @@ const Project = require('../Models/project');
 const { verifyAccessTokenForUserId } =require('../Helpers/validate');
 const paginationResults = require('../Helpers/pagination');
 const { getFeatureAccess } = require('../Helpers/role');
+const multer = require('multer');
+
+
+
+//Project Attachments.
+const storage = multer.diskStorage({
+    destination : function(req, file, cb){
+        cb(null, 'public/projectAttachments');
+    },
+    filename : function(req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+const fileFilter = (req, files, cb) => {
+    for(let i=0; i<files.length; i++){
+        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
+            cb(null,false);
+            continue;
+        }     
+    }
+    cb(null,true);
+};
+
+const upload = multer({
+    storage : storage,
+    limits : {
+        fileSize : 1024 * 1024 * 5
+    },
+    fileFilter : fileFilter
+});
+
+
+
+//Testcase Attachments.
+const storage1 = multer.diskStorage({
+    destination : function(req, file, cb){
+        cb(null, 'public/testcaseAttachments');
+    },
+    filename : function(req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+const fileFilter1 = (req, files, cb) => {
+    for(let i=0; i<files.length; i++){
+        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
+            cb(null,false);
+            continue;
+        }     
+    }
+    cb(null,true);
+};
+
+const uploadTestCaseAttachments = multer({
+    storage : storage1,
+    limits : {
+        fileSize : 1024 * 1024 * 5
+    },
+    fileFilter : fileFilter1
+});
+
+const allUpload = uploadTestCaseAttachments.fields([{ name : 'imageOrAttachment', maxCount : 100}, { name : "additionalImageOrAttachment", maxCount : 100}, {name : "videoAttachment", maxCount : 100}])
+
+
 
 //post project details.
-router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
+router.post('/add/', upload.array('attachments'), verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
 //Get project data.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getProject);
@@ -41,7 +106,7 @@ router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAc
 router.get('/get-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCaseById);
 
 //Update test case.
-router.put('/update-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
+router.put('/update-testcase/:testCaseID', allUpload, verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
 
 //delete test case.
 router.delete('/delete-testcase/:testCaseID', verifyAccessTokenForUserId, ProjectController.deleteTestCase);
@@ -59,7 +124,7 @@ router.get('/list-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAcce
 router.get('/get-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLogById);
 
 //Update run-log
-router.put('/update-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
+router.put('/update-runlog/:runLogID', allUpload, verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
 
 //Delete run-log
 router.delete('/delete-runlog/:runLogID', verifyAccessTokenForUserId, ProjectController.deleteRunlog);
@@ -78,6 +143,12 @@ router.delete('/delete/:projectID', verifyAccessTokenForUserId, ProjectControlle
 
 //Change project condition.
 router.put('/remove/:projectID', verifyAccessTokenForUserId, ProjectController.changeProjectCondition);
+
+//Get attachments for projects.
+router.get('/get-project-attachment/:filename', ProjectController.getProjectAttachments);
+
+//Get attachments for testcases.
+router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAttachment);
 
 module.exports =router;
 

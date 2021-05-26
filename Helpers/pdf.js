@@ -18,6 +18,7 @@ function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
                 let page = await browser.newPage();
                 await page.setContent(template);
                 await page.pdf({ path: `./PDFs/${pdfFileName}.pdf`, format: 'A4' });
+
                 //Sending pdf as mail.
                 let fName ="";
                 let email = "";
@@ -26,11 +27,9 @@ function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
                 let paths = `./PDFs/${pdfFileName}.pdf`;
                 let otp = "";
                 let password = "";
-                let csv = "";
+                let csv = "";   
                 let data = Data.projectId;
-                console.log("data --- > ", data);
                 let findProject = await Project.findOne({"_id" : data});
-                console.log("findProject --- > ", findProject);
                 let projectName = findProject.nameOfProject
 
                

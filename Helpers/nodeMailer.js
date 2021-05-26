@@ -50,10 +50,10 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
     }
 
     if(html == 'forget password' ){
-        mailOptions['subject'] = 'OTP to generate new password'
+        mailOptions['subject'] = 'OTP to generate new password for Test Case Management App'
         mailOptions['html'] =  `<div>
-                                     <h4>Dear User, </h4>
-                                     <h2 style='font-weight:bold;'>OTP  is <b>${otp}</b> to login into your Test Case Management System</h2>
+                                     <h2>Dear User, </h2>
+                                     <h3>OTP  is <b>${otp}</b> to login into your Test Case Management System</h3>
                                      <h4>If you did not attempted the request, please contact admin immediately.</h4>
                                 </div>`
     }

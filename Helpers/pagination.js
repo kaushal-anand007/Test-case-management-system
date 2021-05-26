@@ -30,7 +30,7 @@ function paginationResults (model) {
 
         try {
             
-            let modelOutput = await model.find(data).limit(limit).skip(startIndex).exec();
+            let modelOutput = await model.find(data).limit(limit).skip(startIndex).sort({_id : -1});
             let output = [];
 
             if(role == 'Admin'){
