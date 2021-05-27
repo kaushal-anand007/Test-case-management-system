@@ -50,9 +50,7 @@ app.use('/report', reportRoute);
 
 app.get('/getPDF', (req,res) => {
     let getpdf = req.query;
-    console.log("getpdf", getpdf);
     let result = Object.values(getpdf);
-    console.log("result --- > ",result);
     res.sendFile(`/home/kaushal/Pictures/${result}`, (error, data) => {
     if (error) {
         console.error(error);

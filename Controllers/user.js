@@ -74,6 +74,7 @@ async function registerUser (req,res) {
     }
    
     let newUserPassword = "SK" + passWord;
+
     try{
      //Encrypted the password created 
      const salt = await bcrypt.genSalt(5);
@@ -130,19 +131,19 @@ async function verifyuser (req,res) {
     try {
         let user = await User.findOne({ "confirmationCode" : req.params.confirmationCode});
         let email = user.email;
-        let emailLength = email.length;
-        let midLenght = Math.round(emailLength/2);
-        let midOfMid = Math.round(midLenght/2);
-        let cropEmail = email.slice(midLenght-midOfMid-1,midLenght+midOfMid);
-        let replacedString = 2*(midOfMid)+1;
-        let output = '';
-        for(let i=0;i<replacedString;i++){
-            output += '*';
-        }
-        let emailAfterReplacing = email.replace(cropEmail,output);
+        // let emailLength = email.length;
+        // let midLenght = Math.round(emailLength/2);
+        // let midOfMid = Math.round(midLenght/2);
+        // let cropEmail = email.slice(midLenght-midOfMid-1,midLenght+midOfMid);
+        // let replacedString = 2*(midOfMid)+1;
+        // let output = '';
+        // for(let i=0;i<replacedString;i++){
+        //     output += '*';
+        // }
+        // let emailAfterReplacing = email.replace(cropEmail,output);
         if(user.status == "Active"){
             let email = user.email;
-            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index1.ejs", {"email" : emailAfterReplacing});
+            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index1.ejs", {"email" : email});
         }else{
             let fName = "";
             let email = user.email;
