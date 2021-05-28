@@ -1,3 +1,4 @@
+const argv = require('yargs').argv;
 const Project = require('../Models/project');
 const mongoose =require('mongoose');
 const Log =require('../Models/log');
@@ -12,6 +13,7 @@ const { Parser, transforms: { unwind }  } = require('json2csv');
 const User = require('../Models/user');
 const csvtojson = require("csvtojson");
 const path = require('path');
+let fs = require("fs");
 
 //Function to auto increment the usercode.
 function getNextSequenceValue(sequenceName){
@@ -853,6 +855,37 @@ async function getTestcaseAttachment (req,res){
     }
 };
 
+async function getCsvOfTestcase (req,res){
+    // let date = new Date();
+    // let action = "Generated csv of run log and send it to mail";
+    // let userID = req.user.payload.userId;
+    // let actedBy = req.user.payload.user.fName;
+    // let usercode = req.user.payload.user.userCode;
+    let projectId = req.params.projectID;
+
+    try {
+        //convert json to csv.
+        let dataArrays = await TestCase.find({"projectID" : projectId});
+        let project = await Project.findOne({"_id" : projectId})
+        let projectCode = project.projectCode;
+        let myJSON = JSON.stringify(dataArrays);
+        let myParse = JSON.parse(myJSON);
+        let fields = ['testCaseCode','title','projectID','userID','testDescriptions','scenarioID','scenario','runLogId','status','testedBy._id', 'testedBy.fName', 'testedBy.lName', 'remark', 'imageOrAttachment', 'additionalImageOrAttachment', 'videoAttachment', 'createdBy', 'createdOn', 'modifiedBy', 'modifiedOn'];
+        let transforms = [unwind({ paths: ['testCaseList']})];
+        let json2csvParser = new Parser({ fields, transforms });
+        let csv = json2csvParser.parse(myParse);
+
+        // await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+    
+        res.header('Content-Type', 'text/csv');
+        res.attachment(`${projectCode}.csv`);
+        res.status(200).send(csv);
+    } catch (error) {
+          console.log(error);
+        res.status(400).json({ message : "CSV not Generated!"});
+    }
+}
+
 module.exports = {  
     postProject : postProject,
     getProject : getProject,
@@ -880,4 +913,5 @@ module.exports = {
     changeProjectCondition : changeProjectCondition,
     getProjectAttachments : getProjectAttachments,
     getTestcaseAttachment : getTestcaseAttachment,
+    getCsvOfTestcase : getCsvOfTestcase
 }

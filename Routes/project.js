@@ -50,22 +50,22 @@ const storage1 = multer.diskStorage({
     }
 });
 
-const fileFilter1 = (req, files, cb) => {
-    for(let i=0; i<files.length; i++){
-        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
-            cb(null,false);
-            continue;
-        }     
-    }
-    cb(null,true);
-};
+// const fileFilter1 = (req, files, cb) => {
+//     for(let i=0; i<files.length; i++){
+//         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
+//             cb(null,false);
+//             continue;
+//         }     
+//     }
+//     cb(null,true);
+// };
 
 const uploadTestCaseAttachments = multer({
     storage : storage1,
-    limits : {
-        fileSize : 1024 * 1024 * 5
-    },
-    fileFilter : fileFilter1
+    // limits : {
+    //     fileSize : 1024 * 1024 * 5
+    // },
+    // fileFilter : fileFilter1
 });
 
 const allUpload = uploadTestCaseAttachments.fields([{ name : 'imageOrAttachment', maxCount : 100}, { name : "additionalImageOrAttachment", maxCount : 100}, {name : "videoAttachment", maxCount : 100}])
@@ -149,6 +149,9 @@ router.get('/get-project-attachment/:filename', ProjectController.getProjectAtta
 
 //Get attachments for testcases.
 router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAttachment);
+
+//Get testcase CSV.
+router.get('/get-testcase-csv/:projectID', ProjectController.getCsvOfTestcase)
 
 module.exports =router;
 
