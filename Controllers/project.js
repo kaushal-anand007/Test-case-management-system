@@ -856,11 +856,11 @@ async function getTestcaseAttachment (req,res){
 };
 
 async function getCsvOfTestcase (req,res){
-    // let date = new Date();
-    // let action = "Generated csv of run log and send it to mail";
-    // let userID = req.user.payload.userId;
-    // let actedBy = req.user.payload.user.fName;
-    // let usercode = req.user.payload.user.userCode;
+    let date = new Date();
+    let action = "Generated csv of run log and send it to mail";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let usercode = req.user.payload.user.userCode;
     let projectId = req.params.projectID;
 
     try {
@@ -875,7 +875,7 @@ async function getCsvOfTestcase (req,res){
         let json2csvParser = new Parser({ fields, transforms });
         let csv = json2csvParser.parse(myParse);
 
-        // await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : usercode, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
     
         res.header('Content-Type', 'text/csv');
         res.attachment(`${projectCode}.csv`);
