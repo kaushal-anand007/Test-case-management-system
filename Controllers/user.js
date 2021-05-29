@@ -155,7 +155,7 @@ async function verifyuser (req,res) {
             await User.updateOne({"confirmationCode" : req.params.confirmationCode}, {$set : { "status" : "Active" , "verification.emailConfirmation" : "Confirmed"}});
 
             getMailThroughNodeMailer( fName, email, confirmationCode = "", html, filename, path, password );
-            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index.ejs", {"email" : emailAfterReplacing});
+            res.render("/home/kaushal/Desktop/workspace-storeking/test-case-api-service/views/pages/index.ejs", {"email" : email});
         }
     } catch (error) {
         console.log("error --- > ",error)

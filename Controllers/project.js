@@ -1,4 +1,3 @@
-const argv = require('yargs').argv;
 const Project = require('../Models/project');
 const mongoose =require('mongoose');
 const Log =require('../Models/log');
@@ -13,7 +12,7 @@ const { Parser, transforms: { unwind }  } = require('json2csv');
 const User = require('../Models/user');
 const csvtojson = require("csvtojson");
 const path = require('path');
-let fs = require("fs");
+
 
 //Function to auto increment the usercode.
 function getNextSequenceValue(sequenceName){
@@ -857,7 +856,7 @@ async function getTestcaseAttachment (req,res){
 
 async function getCsvOfTestcase (req,res){
     let date = new Date();
-    let action = "Generated csv of run log and send it to mail";
+    let action = "Generated csv for test case and downloaded";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
     let usercode = req.user.payload.user.userCode;
@@ -882,7 +881,7 @@ async function getCsvOfTestcase (req,res){
         res.status(200).send(csv);
     } catch (error) {
           console.log(error);
-        res.status(400).json({ message : "CSV not Generated!"});
+        res.status(400).json({ message : "CSV not Download!"});
     }
 }
 
