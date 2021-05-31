@@ -445,7 +445,8 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
                                      <p><b>Starting date of project :-</b> ${startDate}</p>
                                      <p><b>End date of project :-</b> ${endDate}</p>
                                      <p><b>Time at which project is created :-</b> ${time}</p>
-                                </div>`
+                                </div>
+                                `
     }
 
     if(html == 'get deatils about test case'){

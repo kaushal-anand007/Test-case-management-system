@@ -16,13 +16,14 @@ const storage = multer.diskStorage({
         cb(null, 'public/projectAttachments');
     },
     filename : function(req, file, cb) {
+        console.log("file1 -- > ", file);
         cb(null, file.originalname);
     }
 });
 
 const fileFilter = (req, files, cb) => {
     for(let i=0; i<files.length; i++){
-        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
+        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png" || file.mimetype !== "image/jpg"){
             cb(null,false);
             continue;
         }     
@@ -145,13 +146,12 @@ router.delete('/delete/:projectID', verifyAccessTokenForUserId, ProjectControlle
 router.put('/remove/:projectID', verifyAccessTokenForUserId, ProjectController.changeProjectCondition);
 
 //Get attachments for projects.
-router.get('/get-project-attachment/:filename', ProjectController.getProjectAttachments);
+router.get('/get-project-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getProjectAttachments);
 
 //Get attachments for testcases.
-router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAttachment);
+router.get('/get-testcase-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseAttachment);
 
 //Get testcase CSV.
-router.get('/get-testcase-csv/:projectID', ProjectController.getCsvOfTestcase)
+router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase)
 
 module.exports =router;
-

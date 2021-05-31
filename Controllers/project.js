@@ -41,7 +41,7 @@ async function postProject (req,res) {
     let status;
     
     try {
-        console.log(req.files);
+        console.log("dssf -->",req.files);
         let { nameOfProject, handledBy, projectDescription, members, attachments, startDate, endDate, relevantData} = req.body;
         let projectObj = { nameOfProject, handledBy, projectDescription, members, attachments, startDate, endDate, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date, "role" : userRole}
         if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
@@ -55,6 +55,10 @@ async function postProject (req,res) {
                         getNextSequenceValue("projectCode").then(async data => {
                         let projectcode = 'P'+ data;    
                         projectObj.projectCode = projectcode;
+
+                        // if(req.files.length == undefined){
+                        //     req.files.length == 0;
+                        // }
 
                         let attachments = [];
                         for(let i = 0; i<req.files.length; i++){
