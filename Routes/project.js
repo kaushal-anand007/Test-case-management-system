@@ -51,6 +51,9 @@ const storage1 = multer.diskStorage({
     }
 });
 
+console.log("storage1 --- > ", storage1.DiskStorage);
+// console.log("storage1 --- > ", storage1.getDestination.destination);
+
 // const fileFilter1 = (req, files, cb) => {
 //     for(let i=0; i<files.length; i++){
 //         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
