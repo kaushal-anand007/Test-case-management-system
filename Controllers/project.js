@@ -47,6 +47,7 @@ async function postProject (req,res) {
         if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
+            console.log(req.files);
             await Project.findOne({"nameOfProject" : nameOfProject}, async function(err,results){
                     if(err){ res.json({message : err})}
                     if(results){
@@ -56,14 +57,19 @@ async function postProject (req,res) {
                         let projectcode = 'P'+ data;    
                         projectObj.projectCode = projectcode;
 
-                        // if(req.files.length == undefined){
-                        //     req.files.length == 0;
-                        // }
+                        
 
                         let attachments = [];
-                        for(let i = 0; i<req.files.length; i++){
-                            attachments.push(req.files[i].originalname)
+
+                        if(req.files != undefined){
+                            for(let i = 0; i<req.files.length; i++){
+                                attachments.push(req.files[i].originalname);
+                            }
                         }
+
+                        // for(let i = 0; i<req.files.length; i++){
+                        //     attachments.push(req.files[i].originalname)
+                        // }
                        
                         projectObj["attachments"] =  attachments;
                         await Project.create( projectObj);
@@ -295,10 +301,9 @@ async function postTestCase (req,res){
     let testCaseCode;
     let scenario;
 
-    //Getting _id from array inside the db.
     let {title, testDescriptions, scenarioID, relevantData} = req.body;
     console.log("testDescriptions --- > ", testDescriptions);
-    let testCaseObj = {testCaseCode, title, "projectID" : projectId, "userID" : userID, testDescriptions, scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role};
+    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role};
 
     if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
@@ -414,24 +419,33 @@ async function updateTestCase (req,res) {
     let videoAttachmentArray = [];
     
     try {
+        console.log("req.files --- > ", typeof req.files);
         const obj = JSON.parse(JSON.stringify(req.files));
-        console.log("length ---> ", obj.imageOrAttachment.length);
+        console.log("obj --- > ", typeof obj);
+        console.log("obj ---> ", obj);
         let {title, testDescriptions, status, remark, imageOrAttachment, additionalImageOrAttachment, videoAttachment, relevantData, runLogId} = req.body;
 
-        for(let i=0; i<obj.imageOrAttachment.length; i++){
-            let result = obj.imageOrAttachment[i].originalname
-            attachmentArray.push(result)
+        if(obj.imageOrAttachment != undefined){
+            for(let i=0; i<obj.imageOrAttachment.length; i++){
+                let result = obj.imageOrAttachment[i].originalname
+                attachmentArray.push(result)
+            }
         }
-
-        for(let i=0; i<obj.additionalImageOrAttachment.length; i++){
-            let result = obj.additionalImageOrAttachment[i].originalname
-            additionalAttachmentArray.push(result)
+        
+        if(obj.additionalImageOrAttachment != undefined){
+            for(let i=0; i<obj.additionalImageOrAttachment.length; i++){
+                let result = obj.additionalImageOrAttachment[i].originalname
+                additionalAttachmentArray.push(result)
+            }
         }
-
-        for(let i=0; i<obj.videoAttachment.length; i++){
-            let result = obj.videoAttachment[i].originalname
-            videoAttachmentArray.push(result)
+        
+        if(obj.videoAttachment != undefined){
+            for(let i=0; i<obj.videoAttachment.length; i++){
+                let result = obj.videoAttachment[i].originalname
+                videoAttachmentArray.push(result)
+            }
         }
+        
 
         let Data = await TestCase.findOne({"_id" : testcaseId});
         let testcasecode = Data.testCaseCode;
