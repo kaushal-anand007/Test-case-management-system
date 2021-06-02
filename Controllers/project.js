@@ -92,11 +92,12 @@ async function postProject (req,res) {
                         let filename = projectcode;
                         let projectName = "";
                         let member = [];
+                        let createdby = actedBy;
                         for(let i=0;i<members.length;i++){
                             member.push(members[i].fName);
                         }
             
-                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate);
+                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, createdby);
                         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         res.status(200).json(result);
                      }).catch(error => {
@@ -348,8 +349,9 @@ async function postTestCase (req,res){
                         scenario = getScenario.title;
                         let Date = date.toDateString();
                         let projectName = "";
+                        let createdby = "";
             
-                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date, Time);
+                        getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, createdby, title, testDescriptions, scenario, actedBy, Date, Time);
                         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         res.status(200).json({message : "Successfully added test case"});
                             }).catch(error => {

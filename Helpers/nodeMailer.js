@@ -5,7 +5,7 @@ let time = date.toLocaleTimeString();
 //Importig .env here.
 require('dotenv').config();
 
-async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, title, testDescriptions, scenario, actedBy, Date, Time) {
+async function getMailThroughNodeMailer (fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, createdby, title, testDescriptions, scenario, actedBy, Date, Time) {
     //using nodemailer.
     let transporter =nodemailer.createTransport({
         service: 'gmail',
@@ -438,26 +438,489 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
 
     if(html == 'get deatils about project'){
         mailOptions['subject'] = `A new project is created by ${handledBy.fName}`
-        mailOptions['html'] =  `<div>
-                                     <p><b>Project Name :-</b> ${nameOfProject}</p>
-                                     <p><b>Project Description :-</b> ${projectDescription}</p>
-                                     <p><b>Members of Project:-</b> ${member}</p>
-                                     <p><b>Starting date of project :-</b> ${startDate}</p>
-                                     <p><b>End date of project :-</b> ${endDate}</p>
-                                     <p><b>Time at which project is created :-</b> ${time}</p>
-                                </div>
+        mailOptions['html'] =  `
+                                                                <!DOCTYPE html>
+                                <html >
+                                  <head>
+                                    <meta charset="UTF-8">
+                                    <title>Check this off your to-do list</title>
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                  </head>
+
+                                  <body>
+
+                                    <html>
+
+                                <head>
+                                  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+                                  <meta name="campaign_code" content="MEE180000000">
+                                  <meta name="edata-campaignid" content="freelancer:MEE180000000">
+                                  <meta name="edata-mailclass" content="EDM">
+                                  <meta name="campaign_name" content="1ClickTodo">
+                                  <title>Check this off your to-do list | Freelancer</title>
+                                  <style type="text/css">
+                                    div, p, a, li, td {
+                                            -webkit-text-size-adjust: none;
+                                        }
+                                        html {
+                                            width: 100%;
+                                        }
+                                        body {
+                                            width: 100%;
+                                            height: 100%;
+                                            background: #ffffff !important;
+                                            margin: 0;
+                                            padding: 0;
+                                            -webkit-font-smoothing: antialiased !important;
+                                            -moz-osx-font-smoothing: grayscale;
+                                            font-family:  Helvetica, Arial, sans-serif !important;
+                                        }
+                                        p {
+                                            padding: 0!important;
+                                            margin-top: 0!important;
+                                            margin-right: 0!important;
+                                            margin-bottom: 0!important;
+                                            margin-left: 0!important;
+                                        }
+                                  </style>
+                                </head>
+
+                                <body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" yahoo="fix" style="background-color: #ffffff">
+                                  <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0" style="background-color: #f1f1f3">
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="650" border="0" cellpadding="0" cellspacing="0" align="center">
+                                          <tr>
+                                            <td width="100%" align="center" height="20"></td>
+                                          </tr>
+                                          <tr>
+                                            <td valign="middle" align="center">
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td width="100%" align="center" height="18"></td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="600" align="center" border="0" cellpadding="0" cellspacing="0" style="border-radius: 4px;" bgcolor="#ffffff">
+                                          <tr>
+                                            <td align="center" width="100%" bgcolor="#5DC26A" style="background: url('https://d3bvzwcd1dw6vt.cloudfront.net/static/images/email/build/7f36d21cab925c62e21140b390447e6c.png'); background-size: cover; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td width="100%" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="center" width="100%">
+                                                    <p style="margin: 0; padding: 0; text-align: left; color: #ffffff; font-weight: bold; font-size: 34px; line-height: 34px; font-family:  Helvetica, Arial, sans-serif;">Details about project created by ${createdby}</p>
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td width="100%" height="24"></td>
+                                                </tr>
+                                              </table>
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td align="center" width="100%">
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left" colspan="2"> <span style="margin: 0; padding: 0; text-decoration: none; color: #5DC26A; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;">Name of Project :- </span> 
+                                                                            ${nameOfProject}
+                                                                        </span>
+
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a 
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Project Description :- </span> ${projectDescription}</a>
+                                                        
+                            
+                                                      
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                      
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Lead By :- </span> ${handledBy.fName}</a>
+                                                        
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                                        
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Members :- </span> ${member}</a>
+                                                        
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                                        
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  
+                                                  <td align="left" colspan="2">
+                                                    <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                      style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Starting Date :-</span> ${startDate}  ${time}</a>
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  
+                                                  <td align="left" colspan="2">
+                                                    <a href="https://www.freelancer.com/users/login-instant.php?token=c52719d7ba23455a9aa9052e5739a047b3e311f75dd831a1fd9a3fc960e98d88&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000009%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DI%252Bneed%252Ba%252BWebsite%252BDesigned%2526skills%253D20%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=8"
+                                                      style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;">End Date :- </span> ${endDate}</a>
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                
+                                              </table>
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                  <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f1f1f3">
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="650" align="center" border="0" cellspacing="0" cellpadding="0" style="font-family: Helvetica, Arial, sans-serif;">
+                                          <tr>
+                                            <td width="100%" height="40"></td>
+                                          </tr>
+                                          <tr>
+                                           
+                                          </tr>
+                                          <tr>
+                                            <td height="10" width="100%"></td>
+                                          
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                  
+                                  <div style="display:none; white-space:nowrap; font:15px courier; color:#ffffff;">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</div>
+                                </body>
+
+                                </html>
+                                <!-- X-250ok-CID: FlnMEE180000000-->
+                                    
+                                    
+                                    
+                                    
+                                    
+                                  </body>
+                                </html>
+
                                 `
     }
 
     if(html == 'get deatils about test case'){
         mailOptions['subject'] = `A new test case is created by ${actedBy}`
-        mailOptions['html'] =  `<div>
-                                     <p><b>Test title :-</b> ${title}</p>
-                                     <p><b>Test case description :-</b> ${testDescriptions}</p>
-                                     <p><b>Scenario :-</b> ${scenario}</p>
-                                     <p><b>Test case created on :-</b> ${Date}</p>
-                                     <p><b>Time at which project is created :-</b> ${time}</p>
-                                </div>`
+        mailOptions['html'] =  `
+                                
+                                <!DOCTYPE html>
+                                <html >
+                                  <head>
+                                    <meta charset="UTF-8">
+                                    <title>Check this off your to-do list</title>
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                  </head>
+
+                                  <body>
+
+                                    <html>
+
+                                <head>
+                                  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+                                  <meta name="campaign_code" content="MEE180000000">
+                                  <meta name="edata-campaignid" content="freelancer:MEE180000000">
+                                  <meta name="edata-mailclass" content="EDM">
+                                  <meta name="campaign_name" content="1ClickTodo">
+                                  <title>Check this off your to-do list | Freelancer</title>
+                                  <style type="text/css">
+                                    div, p, a, li, td {
+                                            -webkit-text-size-adjust: none;
+                                        }
+                                        html {
+                                            width: 100%;
+                                        }
+                                        body {
+                                            width: 100%;
+                                            height: 100%;
+                                            background: #ffffff !important;
+                                            margin: 0;
+                                            padding: 0;
+                                            -webkit-font-smoothing: antialiased !important;
+                                            -moz-osx-font-smoothing: grayscale;
+                                            font-family:  Helvetica, Arial, sans-serif !important;
+                                        }
+                                        p {
+                                            padding: 0!important;
+                                            margin-top: 0!important;
+                                            margin-right: 0!important;
+                                            margin-bottom: 0!important;
+                                            margin-left: 0!important;
+                                        }
+                                  </style>
+                                </head>
+
+                                <body leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" yahoo="fix" style="background-color: #ffffff">
+                                  <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0" style="background-color: #f1f1f3">
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="650" border="0" cellpadding="0" cellspacing="0" align="center">
+                                          <tr>
+                                            <td width="100%" align="center" height="20"></td>
+                                          </tr>
+                                          <tr>
+                                            <td valign="middle" align="center">
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td width="100%" align="center" height="18"></td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="600" align="center" border="0" cellpadding="0" cellspacing="0" style="border-radius: 4px;" bgcolor="#ffffff">
+                                          <tr>
+                                            <td align="center" width="100%" bgcolor="#5DC26A" style="background: url('https://d3bvzwcd1dw6vt.cloudfront.net/static/images/email/build/7f36d21cab925c62e21140b390447e6c.png'); background-size: cover; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td width="100%" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="center" width="100%">
+                                                    <p style="margin: 0; padding: 0; text-align: left; color: #ffffff; font-weight: bold; font-size: 34px; line-height: 34px; font-family:  Helvetica, Arial, sans-serif;">Details about Testcase created by ${actedBy}</p>
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td width="100%" height="24"></td>
+                                                </tr>
+                                              </table>
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td align="center" width="100%">
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left" colspan="2"> <span style="margin: 0; padding: 0; text-decoration: none; color: #5DC26A; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;">Testcase Tile :- </span> 
+                                                                            ${title}
+                                                                        </span>
+
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a 
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Testcase Description :- </span> ${testDescriptions}</a>
+                                                        
+                            
+                                                      
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                      
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Scenario :- </span> ${scenario}</a>
+                                                        
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                                        
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Creation Date :-</span> ${Date}</a>
+                                                        
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                                        
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  
+                                                  <td align="left" colspan="2">
+                                                    <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                      style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Creation Time :-</span> ${time}</a>
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              
+                                              
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                
+                                              </table>
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                  <table align="center" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f1f1f3">
+                                    <tr>
+                                      <td width="100%" align="center">
+                                        <table width="650" align="center" border="0" cellspacing="0" cellpadding="0" style="font-family: Helvetica, Arial, sans-serif;">
+                                          <tr>
+                                            <td width="100%" height="40"></td>
+                                          </tr>
+                                          <tr>
+                                           
+                                          </tr>
+                                          <tr>
+                                            <td height="10" width="100%"></td>
+                                          
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                  
+                                  <div style="display:none; white-space:nowrap; font:15px courier; color:#ffffff;">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</div>
+                                </body>
+
+                                </html>
+                                <!-- X-250ok-CID: FlnMEE180000000-->
+                                    
+                                    
+                                    
+                                    
+                                    
+                                  </body>
+                                </html>
+                                `
     }
 
     transporter.sendMail(mailOptions , function(err, data){
