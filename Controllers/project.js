@@ -41,13 +41,11 @@ async function postProject (req,res) {
     let status;
     
     try {
-        console.log("dssf -->",req.files);
         let { nameOfProject, handledBy, projectDescription, members, attachments, startDate, endDate, relevantData} = req.body;
         let projectObj = { nameOfProject, handledBy, projectDescription, members, attachments, startDate, endDate, "userID" : userID, status, "createdBy" : actedBy, "createdOn" : date, "role" : userRole}
         if(nameOfProject == "" || handledBy == "" || projectDescription == "" || startDate == "" || endDate == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
-            console.log(req.files);
             await Project.findOne({"nameOfProject" : nameOfProject}, async function(err,results){
                     if(err){ res.json({message : err})}
                     if(results){
@@ -59,7 +57,7 @@ async function postProject (req,res) {
 
                         
 
-                        let attachments = [];
+                        let attachment = [];
 
                         if(req.files != undefined){
                             for(let i = 0; i<req.files.length; i++){
@@ -71,12 +69,14 @@ async function postProject (req,res) {
                         //     attachments.push(req.files[i].originalname)
                         // }
                        
-                        projectObj["attachments"] =  attachments;
-                        await Project.create( projectObj);
+                        projectObj["attachments"] =  attachment;
+                        console.log("attachments --- > ", attachment);
+                        let projectData = await Project.create( projectObj);
                         let result = {
                             status : 'success',
                             data : {
-                                message : " Project has sucessfully created "
+                                message : " Project has sucessfully created ",
+                                projectID : projectData._id
                             }
                         }
 
@@ -416,39 +416,45 @@ async function updateTestCase (req,res) {
     let testcaseId = req.params.testCaseID;
     let userID = req.user.payload.userId;
     let lname = req.user.payload.user.lName;
-    let attachmentArray = [];
-    let additionalAttachmentArray = [];
-    let videoAttachmentArray = [];
+    // let attachmentArray = [];
+    // let additionalAttachmentArray = [];
+    // let videoAttachmentArray = [];
     
     try {
-        console.log("req.files --- > ", typeof req.files);
-        const obj = JSON.parse(JSON.stringify(req.files));
-        console.log("obj --- > ", typeof obj);
-        console.log("obj ---> ", obj);
-        let {title, testDescriptions, status, remark, imageOrAttachment, additionalImageOrAttachment, videoAttachment, relevantData, runLogId} = req.body;
+        // console.log("req.files --- > ", typeof req.files);
+        // let obj
 
-        if(obj.imageOrAttachment != undefined){
-            for(let i=0; i<obj.imageOrAttachment.length; i++){
-                let result = obj.imageOrAttachment[i].originalname
-                attachmentArray.push(result)
-            }
-        }
+        // if(req.files !== undefined){
+        //     obj = JSON.parse(JSON.stringify(req.files));
+        //     console.log("obj --- > ", typeof obj);
+        //     console.log("obj ---> ", obj);
+        // }
         
-        if(obj.additionalImageOrAttachment != undefined){
-            for(let i=0; i<obj.additionalImageOrAttachment.length; i++){
-                let result = obj.additionalImageOrAttachment[i].originalname
-                additionalAttachmentArray.push(result)
-            }
-        }
+        let {title, testDescriptions, status, remark, relevantData, runLogId} = req.body;
         
-        if(obj.videoAttachment != undefined){
-            for(let i=0; i<obj.videoAttachment.length; i++){
-                let result = obj.videoAttachment[i].originalname
-                videoAttachmentArray.push(result)
-            }
-        }
+        // if(obj !== undefined){
+        //     if(obj.imageOrAttachment != undefined){
+        //         for(let i=0; i<obj.imageOrAttachment.length; i++){
+        //             let result = obj.imageOrAttachment[i].originalname
+        //             attachmentArray.push(result)
+        //         }
+        //     }
+            
+        //     if(obj.additionalImageOrAttachment != undefined){
+        //         for(let i=0; i<obj.additionalImageOrAttachment.length; i++){
+        //             let result = obj.additionalImageOrAttachment[i].originalname
+        //             additionalAttachmentArray.push(result)
+        //         }
+        //     }
+            
+        //     if(obj.videoAttachment != undefined){
+        //         for(let i=0; i<obj.videoAttachment.length; i++){
+        //             let result = obj.videoAttachment[i].originalname
+        //             videoAttachmentArray.push(result)
+        //         }
+        //     }
+        // }
         
-
         let Data = await TestCase.findOne({"_id" : testcaseId});
         let testcasecode = Data.testCaseCode;
         let testedBy = {
@@ -477,7 +483,7 @@ async function updateTestCase (req,res) {
                 setQuery["remark"] = remark;
             }
 
-            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray, "videoAttachment" : videoAttachmentArray}, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy});
+            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy});
             await TestCase.findOneAndUpdate({"_id" : testcaseId}, {$set : {"testedBy" : testedBy}});
 
             let statusData = Data.status;
@@ -485,18 +491,17 @@ async function updateTestCase (req,res) {
             if(status == 'passed'){
                 if(statusData == 'passed'){
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 0, "testCaseFailed" : 0}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});
                 }else if(statusData == 'failed'){
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCaseFailed" : -1}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});                    
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});                    
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});
                 }else if(statusData == 'pending'){
-
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 1, "testCasePending" : -1}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});                    
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});                    
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});
                 }else{
@@ -507,17 +512,17 @@ async function updateTestCase (req,res) {
             if(status == 'failed'){
                 if(statusData == 'failed'){
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCasePassed" : 0, "testCaseFailed" : 0}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});                    
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});                    
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});    
                 }else if(statusData == 'passed'){
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1, "testCasePassed" : -1}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});                    
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});                    
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});
                 }else if(statusData == 'pending'){
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$inc : {"testCaseFailed" : 1,"testCasePending" : -1}});
-                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}, $push : {"imageOrAttachment" : attachmentArray, "additionalImageOrAttachment" : additionalAttachmentArray}});                    
+                    await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseId}, {$set : {"testCaseList.$.status" : status, "testCaseList.$.testedBy" : testedBy, "testCaseList.$.remark" : remark}});                    
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                     res.status(200).json({ message :"Updated runLog details"});
                 }else{
@@ -874,6 +879,80 @@ async function getTestcaseAttachment (req,res){
     }
 };
 
+async function getTestcaseVideoAttachment (req,res){
+    let attachment = req.params.filename
+    try {
+        let filePath = '/home/kaushal/Desktop/workspace-storeking/test-case-api-service/public/testcaseVideoAttachment/'
+        res.sendFile(filePath+`${attachment}`)
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message : "Error! File is not present."})
+    }
+};
+
+async function postImageAttachments (req,res) {
+    let testcaseid = req.params.testCaseID;
+    let { runLogId } = req.body;
+    
+    try {
+        let attachments = [];
+
+        if(req.files != undefined){
+        for(let i = 0; i<req.files.length; i++){
+            attachments.push(req.files[i].originalname);
+           }
+        }
+
+        await TestCase.findOneAndUpdate({"_id" : testcaseid}, {$push : {"imageOrAttachment" : attachments}});
+        await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseid}, {$push : {"testCaseList.$.imageOrAttachment" : attachments}});
+        res.status(200).json("Attachments are uploaded!!!")
+    } catch (error) {
+        console.log(error);
+        res.status(400).json("Attachments not uploaded!!!")
+    }
+}
+
+async function postAttachmentsForProject (req,res) {
+    let projectid = req.params.projectID;
+    
+    try {
+        let attachments = [];
+
+        if(req.files != undefined){
+        for(let i = 0; i<req.files.length; i++){
+            attachments.push(req.files[i].originalname);
+           }
+        }
+
+        await Project.findOneAndUpdate({"_id" : projectid}, {$push : {"attachments" : attachments}});
+        res.status(200).json("Attachments are uploaded!!!")
+    } catch (error) {
+        console.log(error);
+        res.status(400).json("Attachments not uploaded!!!")
+    }
+}
+
+async function postVideoAttachment (req,res) {
+    let testcaseid = req.params.testCaseID;
+    let { runLogId } = req.body;
+    try {
+        let attachments = [];
+
+        if(req.files != undefined){
+        for(let i = 0; i<req.files.length; i++){
+            attachments.push(req.files[i].originalname);
+           }
+        }
+        
+        await TestCase.findOneAndUpdate({"_id" : testcaseid}, {$push : {"videoAttachment" : attachments}});
+        await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseid}, {$push : {"testCaseList.$.videoAttachment" : attachments}});
+        res.status(200).json("Video Attachments are uploaded!!!")
+    } catch (error) {
+        console.log(error);
+        res.status(400).json("Video Attachments not uploaded!!!")
+    }
+}
+
 async function getCsvOfTestcase (req,res){
     let date = new Date();
     let action = "Generated csv for test case and downloaded";
@@ -881,6 +960,7 @@ async function getCsvOfTestcase (req,res){
     let actedBy = req.user.payload.user.fName;
     let usercode = req.user.payload.user.userCode;
     let projectId = req.params.projectID;
+    console.log("projectId ---> ", projectId);
 
     try {
         //convert json to csv.
@@ -932,5 +1012,9 @@ module.exports = {
     changeProjectCondition : changeProjectCondition,
     getProjectAttachments : getProjectAttachments,
     getTestcaseAttachment : getTestcaseAttachment,
-    getCsvOfTestcase : getCsvOfTestcase
+    getCsvOfTestcase : getCsvOfTestcase,
+    postImageAttachments : postImageAttachments,
+    postVideoAttachment : postVideoAttachment,
+    postAttachmentsForProject : postAttachmentsForProject,
+    getTestcaseVideoAttachment : getTestcaseVideoAttachment
 }

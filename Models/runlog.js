@@ -55,9 +55,6 @@ const runLogSchema = new mongoose.Schema({
         },
         remark : { type : String },
         imageOrAttachment : [{type : String}],
-        additionalImageOrAttachment : [{
-            type : String
-        }],
         videoAttachment : [{
             type : String
         }]

@@ -16,32 +16,31 @@ const storage = multer.diskStorage({
         cb(null, 'public/projectAttachments');
     },
     filename : function(req, file, cb) {
-        console.log("file1 -- > ", file);
         cb(null, file.originalname);
     }
 });
 
-const fileFilter = (req, files, cb) => {
-    for(let i=0; i<files.length; i++){
-        if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png" || file.mimetype !== "image/jpg"){
-            cb(null,false);
-            continue;
-        }     
-    }
-    cb(null,true);
-};
+// const fileFilter = (req, files, cb) => {
+//     for(let i=0; i<files.length; i++){
+//         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png" || file.mimetype !== "image/jpg"){
+//             cb(null,false);
+//             continue;
+//         }     
+//     }
+//     cb(null,true);
+// };
 
 const upload = multer({
     storage : storage,
     limits : {
-        fileSize : 1024 * 1024 * 5
+        fileSize : 1024 * 1024 * 1000
     },
-    fileFilter : fileFilter
+    // fileFilter : fileFilter
 });
 
 
 
-//Testcase Attachments.
+//Testcase ImageAttachments.
 const storage1 = multer.diskStorage({
     destination : function(req, file, cb){
         cb(null, 'public/testcaseAttachments');
@@ -51,7 +50,7 @@ const storage1 = multer.diskStorage({
     }
 });
 
-console.log("storage1 --- > ", storage1.DiskStorage);
+
 // console.log("storage1 --- > ", storage1.getDestination.destination);
 
 // const fileFilter1 = (req, files, cb) => {
@@ -64,7 +63,7 @@ console.log("storage1 --- > ", storage1.DiskStorage);
 //     cb(null,true);
 // };
 
-const uploadTestCaseAttachments = multer({
+const imageOrAttachment = multer({
     storage : storage1,
     // limits : {
     //     fileSize : 1024 * 1024 * 5
@@ -72,7 +71,38 @@ const uploadTestCaseAttachments = multer({
     // fileFilter : fileFilter1
 });
 
-const allUpload = uploadTestCaseAttachments.fields([{ name : 'imageOrAttachment', maxCount : 100}, { name : "additionalImageOrAttachment", maxCount : 100}, {name : "videoAttachment", maxCount : 100}])
+//Testcase VideoAttachments.
+const storage2 = multer.diskStorage({
+    destination : function(req, file, cb){
+        cb(null, 'public/testcaseVideoAttachment');
+    },
+    filename : function(req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+
+// console.log("storage1 --- > ", storage1.getDestination.destination);
+
+// const fileFilter1 = (req, files, cb) => {
+//     for(let i=0; i<files.length; i++){
+//         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
+//             cb(null,false);
+//             continue;
+//         }     
+//     }
+//     cb(null,true);
+// };
+
+const videoAttachment = multer({
+    storage : storage2,
+    // limits : {
+    //     fileSize : 1024 * 1024 * 5
+    // },
+    // fileFilter : fileFilter1
+});
+
+
 
 
 
@@ -110,7 +140,7 @@ router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAc
 router.get('/get-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCaseById);
 
 //Update test case.
-router.put('/update-testcase/:testCaseID', allUpload, verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
+router.put('/update-testcase/:testCaseID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateTestCase);
 
 //delete test case.
 router.delete('/delete-testcase/:testCaseID', verifyAccessTokenForUserId, ProjectController.deleteTestCase);
@@ -128,7 +158,7 @@ router.get('/list-runlog/:projectID', verifyAccessTokenForUserId, getFeatureAcce
 router.get('/get-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getRunLogById);
 
 //Update run-log
-router.put('/update-runlog/:runLogID', allUpload, verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
+router.put('/update-runlog/:runLogID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.updateRunLog);
 
 //Delete run-log
 router.delete('/delete-runlog/:runLogID', verifyAccessTokenForUserId, ProjectController.deleteRunlog);
@@ -151,8 +181,20 @@ router.put('/remove/:projectID', verifyAccessTokenForUserId, ProjectController.c
 //Get attachments for projects.
 router.get('/get-project-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getProjectAttachments);
 
+//Post ImageAttachments.
+router.post('/postImageAttachment/:testCaseID', imageOrAttachment.array('imageOrAttachment'), ProjectController.postImageAttachments);
+
+//Post Attactments for project.
+router.post('/postProjectAttachment/:projectID', upload.array('attachments'), ProjectController.postAttachmentsForProject)
+
+//Post VideoAttactments for testcases.
+router.post('/postVideoAttachment/:testCaseID', videoAttachment.array('videoAttachment'), ProjectController.postVideoAttachment)
+
 //Get attachments for testcases.
 router.get('/get-testcase-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseAttachment);
+
+//Get attachments for testcases video.
+router.get('/get-testcase-video-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseVideoAttachment);
 
 //Get testcase CSV.
 router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase)

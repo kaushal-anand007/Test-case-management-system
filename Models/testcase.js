@@ -54,10 +54,6 @@ const testCaseSchema=new mongoose.Schema({
         type : String
     }],
 
-    additionalImageOrAttachment : [{
-        type : String
-    }],
-
     videoAttachment : [{
         type : String
     }],
