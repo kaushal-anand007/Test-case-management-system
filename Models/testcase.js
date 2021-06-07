@@ -80,6 +80,12 @@ const testCaseSchema=new mongoose.Schema({
         enum : ['Active', 'Inactive']
     },
 
+    priority : {
+        type : String,
+        default : 'medium',
+        enum : ['low', 'medium', 'high']
+    },
+
     role : { type : String }
 });
 

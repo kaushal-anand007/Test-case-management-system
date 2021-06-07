@@ -57,7 +57,8 @@ const runLogSchema = new mongoose.Schema({
         imageOrAttachment : [{type : String}],
         videoAttachment : [{
             type : String
-        }]
+        }],
+        priority : { type : String }
     }],
 
     leadBy : {

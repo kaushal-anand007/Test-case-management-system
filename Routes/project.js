@@ -103,9 +103,6 @@ const videoAttachment = multer({
 });
 
 
-
-
-
 //post project details.
 router.post('/add/', upload.array('attachments'), verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
@@ -179,7 +176,7 @@ router.delete('/delete/:projectID', verifyAccessTokenForUserId, ProjectControlle
 router.put('/remove/:projectID', verifyAccessTokenForUserId, ProjectController.changeProjectCondition);
 
 //Get attachments for projects.
-router.get('/get-project-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getProjectAttachments);
+router.get('/get-project-attachment/:filename', ProjectController.getProjectAttachments);
 
 //Post ImageAttachments.
 router.post('/postImageAttachment/:testCaseID', imageOrAttachment.array('imageOrAttachment'), ProjectController.postImageAttachments);
