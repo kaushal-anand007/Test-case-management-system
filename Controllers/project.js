@@ -57,20 +57,20 @@ async function postProject (req,res) {
 
                         
 
-                        let attachment = [];
+                        // let attachment = [];
 
-                        if(req.files != undefined){
-                            for(let i = 0; i<req.files.length; i++){
-                                attachments.push(req.files[i].originalname);
-                            }
-                        }
-
-                        // for(let i = 0; i<req.files.length; i++){
-                        //     attachments.push(req.files[i].originalname)
+                        // if(req.files != undefined){
+                        //     for(let i = 0; i<req.files.length; i++){
+                        //         attachments.push(req.files[i].originalname);
+                        //     }
                         // }
+
+                        // // for(let i = 0; i<req.files.length; i++){
+                        // //     attachments.push(req.files[i].originalname)
+                        // // }
                        
-                        projectObj["attachments"] =  attachment;
-                        console.log("attachments --- > ", attachment);
+                        // projectObj["attachments"] =  attachment;
+                        // console.log("attachments --- > ", attachment);
                         let projectData = await Project.create( projectObj);
                         let result = {
                             status : 'success',
@@ -302,9 +302,9 @@ async function postTestCase (req,res){
     let testCaseCode;
     let scenario;
 
-    let {title, testDescriptions, scenarioID, relevantData} = req.body;
+    let {title, testDescriptions, scenarioID, relevantData, priority} = req.body;
     console.log("testDescriptions --- > ", testDescriptions);
-    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role};
+    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority};
 
     if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
@@ -430,7 +430,7 @@ async function updateTestCase (req,res) {
         //     console.log("obj ---> ", obj);
         // }
         
-        let {title, testDescriptions, status, remark, relevantData, runLogId} = req.body;
+        let {title, testDescriptions, status, remark, relevantData, runLogId, priority} = req.body;
         
         // if(obj !== undefined){
         //     if(obj.imageOrAttachment != undefined){
@@ -483,7 +483,7 @@ async function updateTestCase (req,res) {
                 setQuery["remark"] = remark;
             }
 
-            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy});
+            await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy, "priority" : priority});
             await TestCase.findOneAndUpdate({"_id" : testcaseId}, {$set : {"testedBy" : testedBy}});
 
             let statusData = Data.status;
@@ -610,22 +610,32 @@ async function postRunLog (req,res) {
                 let countPassed = 0;
                 let countFailed = 0;
                 let countPending = 0;
-                let testCase = await TestCase.find({"projectID" : projectId});
+
+                let testCasesAfterReset = {};
+
+
+                // let testCase = await TestCase.find({"projectID" : projectId});
+                // //let runLog = await RunLog.findOn
+
+                // if()
                 
-                for(let i = 0; i<testCase.length; i++){
-                    if(testCase[i].status == "passed"){
-                        countPassed = countPassed + 1;
-                    }
-                    if(testCase[i].status == "failed"){
-                        countFailed = countFailed + 1;
-                    }
-                    if(testCase[i].status == "pending"){
-                        countPending = countPending + 1;
-                    }
-                }
+                // for(let i = 0; i<testCase.length; i++){
+                //     if(testCase[i].status == "passed"){
+                //         countPassed = countPassed + 1;
+                //     }
+                //     if(testCase[i].status == "failed"){
+                //         countFailed = countFailed + 1;
+                //     }
+                //     if(testCase[i].status == "pending"){
+                //         countPending = countPending + 1;
+                //     }
+                // }
+
+                console.log("getTestCase -- > ", getTestCase);
                 runLogObj["testCasePassed"] = countPassed;
                 runLogObj["testCaseFailed"] = countFailed;
-                runLogObj["testCasePending"] = countPending;
+                //runLogObj["testCasePending"] = countPending;
+                runLogObj["testCasePending"] = totalTestCase;
                 runLogObj["testCaseList"] = getTestCase;
                 runLogObj["projectTitle"] = title;
 
@@ -682,10 +692,14 @@ async function updateRunLog (req,res) {
     try {
         let { comment, imageOrAttachment, status, remark, relevantData } = req.body;
         let Data = await RunLog.findOne({"_id" : runlogId})
+        let projectId = Data.projectId;
         if(Data == null){
             res.status(400).json({ message : "The required runlog is not present!"})
         }else{
             let setQuery = {};
+            let countPassed = 0;
+            let countFailed = 0;
+            let countPending = 0;
 
             if(comment) {
                 setQuery["comment"] = comment;
@@ -700,7 +714,20 @@ async function updateRunLog (req,res) {
                 setQuery["remark"] = remark ;
             }
 
-            await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date });
+            let getRunLog = await RunLog.findOne({"_id" : req.params.runLogID});
+            let projectId = getRunLog.projectId;
+            let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}] });
+
+            for(let i = 0; i<getTestCase.length; i++){
+                let imgAttachments = [];
+                let videoAttachment = [];
+                let testCaseStatus = 'pending';
+                let priority = "medium";
+                let testCaseId = getTestCase[i]._id; 
+                await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : imgAttachments, "videoAttachment" : videoAttachment, "status" : testCaseStatus, "priority" : priority});
+            }
+
+            await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date});
             let runlogcode = Data.runLogCode;
             await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
           res.status(200).json({ message :"Updated runLog details"});
@@ -916,6 +943,8 @@ async function postAttachmentsForProject (req,res) {
     let projectid = req.params.projectID;
     
     try {
+        console.log("projectid ---> ", projectid);
+        console.log("req.files --- > ", req.files);
         let attachments = [];
 
         if(req.files != undefined){
@@ -923,7 +952,7 @@ async function postAttachmentsForProject (req,res) {
             attachments.push(req.files[i].originalname);
            }
         }
-
+        console.log("attachments --- > ", attachments);
         await Project.findOneAndUpdate({"_id" : projectid}, {$push : {"attachments" : attachments}});
         res.status(200).json("Attachments are uploaded!!!")
     } catch (error) {
@@ -978,10 +1007,12 @@ async function getCsvOfTestcase (req,res){
     
         res.header('Content-Type', 'text/csv');
         res.attachment(`${projectCode}.csv`);
+        res.set('Content-Type', 'text/csv');
         res.status(200).send(csv);
+      
     } catch (error) {
           console.log(error);
-        res.status(400).json({ message : "CSV not Download!"});
+        res.status(400).json({ message : "CSV not Downloaded!"});
     }
 }
 
