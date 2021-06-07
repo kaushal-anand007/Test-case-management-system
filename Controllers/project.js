@@ -589,7 +589,7 @@ async function postRunLog (req,res) {
     let testCasePassed;
     let testCaseFailed;
     let testCasePending;
-    let testCaseList;
+    let testCaseList = [];
  
     try {
         let { remark, imageOrAttachment, filename, pdfFileName, status, relevantData } = req.body;
@@ -611,11 +611,9 @@ async function postRunLog (req,res) {
                 let countFailed = 0;
                 let countPending = 0;
 
-                let testCasesAfterReset = {};
-
 
                 // let testCase = await TestCase.find({"projectID" : projectId});
-                // //let runLog = await RunLog.findOn
+                //let runLog = await RunLog.findOn
 
                 // if()
                 
@@ -630,6 +628,16 @@ async function postRunLog (req,res) {
                 //         countPending = countPending + 1;
                 //     }
                 // }
+
+                for(let i = 0; i<getTestCase.length; i++){
+                    let imgAttachments = [];
+                    let videoAttachment = [];
+                    let testCaseStatus = 'pending';
+                    //let priority = "medium";
+                    let testCaseId = getTestCase[i]._id; 
+                    console.log("testCaseId --- > ", testCaseId);
+                    await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : imgAttachments, "videoAttachment" : videoAttachment, "status" : testCaseStatus});
+                }
 
                 console.log("getTestCase -- > ", getTestCase);
                 runLogObj["testCasePassed"] = countPassed;
@@ -697,9 +705,6 @@ async function updateRunLog (req,res) {
             res.status(400).json({ message : "The required runlog is not present!"})
         }else{
             let setQuery = {};
-            let countPassed = 0;
-            let countFailed = 0;
-            let countPending = 0;
 
             if(comment) {
                 setQuery["comment"] = comment;
@@ -712,19 +717,6 @@ async function updateRunLog (req,res) {
             }
             if(remark) {
                 setQuery["remark"] = remark ;
-            }
-
-            let getRunLog = await RunLog.findOne({"_id" : req.params.runLogID});
-            let projectId = getRunLog.projectId;
-            let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}] });
-
-            for(let i = 0; i<getTestCase.length; i++){
-                let imgAttachments = [];
-                let videoAttachment = [];
-                let testCaseStatus = 'pending';
-                let priority = "medium";
-                let testCaseId = getTestCase[i]._id; 
-                await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : imgAttachments, "videoAttachment" : videoAttachment, "status" : testCaseStatus, "priority" : priority});
             }
 
             await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date});
@@ -1016,6 +1008,24 @@ async function getCsvOfTestcase (req,res){
     }
 }
 
+async function getAllTestCases (req,res) {
+    try {
+        let result = await TestCase.find();
+        res.status(200).json(result)
+    } catch (error) {
+        res.status(400).json({ message : "Sorry cannot fing test cases"});
+    }
+}
+
+async function getAllRunLogs (req,res) {
+    try {
+        let result = await RunLog.find();
+        res.status(200).json(result)
+    } catch (error) {
+        res.status(400).json({ message : "Sorry cannot fing runlogs"});
+    }
+}
+
 module.exports = {  
     postProject : postProject,
     getProject : getProject,
@@ -1047,5 +1057,7 @@ module.exports = {
     postImageAttachments : postImageAttachments,
     postVideoAttachment : postVideoAttachment,
     postAttachmentsForProject : postAttachmentsForProject,
-    getTestcaseVideoAttachment : getTestcaseVideoAttachment
+    getTestcaseVideoAttachment : getTestcaseVideoAttachment,
+    getAllTestCases : getAllTestCases,
+    getAllRunLogs : getAllRunLogs
 }

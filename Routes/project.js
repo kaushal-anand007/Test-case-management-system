@@ -14,11 +14,12 @@ const multer = require('multer');
 const storage = multer.diskStorage({
     destination : function(req, file, cb){
         cb(null, 'public/projectAttachments');
+        console.log("file --->", file);
     },
     filename : function(req, file, cb) {
         cb(null, file.originalname);
     }
-});
+})
 
 // const fileFilter = (req, files, cb) => {
 //     for(let i=0; i<files.length; i++){
@@ -32,9 +33,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage : storage,
-    limits : {
-        fileSize : 1024 * 1024 * 1000
-    },
+    // limits : {
+    //     fileSize : 1024 * 1024 * 1000
+    // },
     // fileFilter : fileFilter
 });
 
@@ -104,7 +105,7 @@ const videoAttachment = multer({
 
 
 //post project details.
-router.post('/add/', upload.array('attachments'), verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
+router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
 
 //Get project data.
 router.get('/list/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getProject);
@@ -194,6 +195,12 @@ router.get('/get-testcase-attachment/:filename', verifyAccessTokenForUserId, Pro
 router.get('/get-testcase-video-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseVideoAttachment);
 
 //Get testcase CSV.
-router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase)
+router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase);
+
+//Get all cases irrespective of projectid.
+router.get('/get-all-testCases/', verifyAccessTokenForUserId, verifyAccessTokenForUserId, ProjectController.getAllTestCases);
+
+//Get all cases irrespective of projectid.
+router.get('/get-all-testCases/', verifyAccessTokenForUserId, verifyAccessTokenForUserId, ProjectController.getAllRunLogs);
 
 module.exports =router;
