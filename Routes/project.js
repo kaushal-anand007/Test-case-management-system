@@ -52,24 +52,8 @@ const storage1 = multer.diskStorage({
 });
 
 
-// console.log("storage1 --- > ", storage1.getDestination.destination);
-
-// const fileFilter1 = (req, files, cb) => {
-//     for(let i=0; i<files.length; i++){
-//         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
-//             cb(null,false);
-//             continue;
-//         }     
-//     }
-//     cb(null,true);
-// };
-
 const imageOrAttachment = multer({
-    storage : storage1,
-    // limits : {
-    //     fileSize : 1024 * 1024 * 5
-    // },
-    // fileFilter : fileFilter1
+    storage : storage1
 });
 
 //Testcase VideoAttachments.
@@ -82,25 +66,25 @@ const storage2 = multer.diskStorage({
     }
 });
 
-
-// console.log("storage1 --- > ", storage1.getDestination.destination);
-
-// const fileFilter1 = (req, files, cb) => {
-//     for(let i=0; i<files.length; i++){
-//         if(file.mimetype !==  "image/jpeg" || file.mimetype !== "image/png"){
-//             cb(null,false);
-//             continue;
-//         }     
-//     }
-//     cb(null,true);
-// };
-
 const videoAttachment = multer({
-    storage : storage2,
-    // limits : {
-    //     fileSize : 1024 * 1024 * 5
-    // },
-    // fileFilter : fileFilter1
+    storage : storage2
+});
+
+
+//Csv upload.
+const csvUpload = multer.diskStorage({
+    destination : function(req, file, cb){
+        //console.log("file --->", file);
+        cb(null, 'public/csv');
+       // console.log("file --->", file);
+    },
+    filename : function(req, file, cb) {
+        cb(null, file.originalname);
+    }
+})
+
+const csv = multer({
+    storage : csvUpload
 });
 
 
@@ -129,7 +113,7 @@ router.get('/get-scenario/:projectID', verifyAccessTokenForUserId, getFeatureAcc
 router.post('/add-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postTestCase);
 
 //Get test case from imported csv file.
-router.post('/get-json-csv', verifyAccessTokenForUserId, ProjectController.getjsonfromcsv);
+router.post('/get-json-csv/:projectID', csv.single('csvfile'), verifyAccessTokenForUserId, ProjectController.getjsonfromcsv);
 
 //List test case.
 router.get('/list-testcase/:projectID', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.getTestCase);
@@ -189,18 +173,18 @@ router.post('/postProjectAttachment/:projectID', upload.array('attachments'), Pr
 router.post('/postVideoAttachment/:testCaseID', videoAttachment.array('videoAttachment'), ProjectController.postVideoAttachment)
 
 //Get attachments for testcases.
-router.get('/get-testcase-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseAttachment);
+router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAttachment);
 
 //Get attachments for testcases video.
-router.get('/get-testcase-video-attachment/:filename', verifyAccessTokenForUserId, ProjectController.getTestcaseVideoAttachment);
+router.get('/get-testcase-video-attachment/:filename', ProjectController.getTestcaseVideoAttachment);
 
 //Get testcase CSV.
 router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase);
 
 //Get all cases irrespective of projectid.
-router.get('/get-all-testCases/', verifyAccessTokenForUserId, verifyAccessTokenForUserId, ProjectController.getAllTestCases);
+router.get('/get-all-testCases/', verifyAccessTokenForUserId, ProjectController.getAllTestCases);
 
 //Get all cases irrespective of projectid.
-router.get('/get-all-testCases/', verifyAccessTokenForUserId, verifyAccessTokenForUserId, ProjectController.getAllRunLogs);
+router.get('/get-all-runlogs/', verifyAccessTokenForUserId, ProjectController.getAllRunLogs);
 
 module.exports =router;

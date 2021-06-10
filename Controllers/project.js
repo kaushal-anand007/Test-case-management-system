@@ -303,9 +303,9 @@ async function postTestCase (req,res){
     let scenario;
 
     let {title, testDescriptions, scenarioID, relevantData, priority} = req.body;
-    console.log("testDescriptions --- > ", testDescriptions);
-    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority};
-
+    let project = await Project.findOne({"_id" : projectId})
+    let projectName = project.nameOfProject
+    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "projectTitle" :  projectName, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority};
     if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
     }else{
@@ -313,8 +313,6 @@ async function postTestCase (req,res){
             await TestCase.findOne({"title" : title}, async function(err,results){
                 if(err){ res.json({message : err})}
                 if(results){
-                    console.log("title --- > ", title);
-                    console.log("result ---> ",results);
                     res.json({ message : "The test case already exists!!!!"});
                 }else{
                     getNextSequenceValue("testCaseCode").then(async data => {
@@ -323,6 +321,7 @@ async function postTestCase (req,res){
                         let getScenario = await Scenario.findOne({"_id" : scenarioID});
                         let getPendingTestCase = await RunLog.findOne({"projectId" : projectId});
                         testCaseObj["scenario"] = getScenario.title;
+
 
                         let testCaseResult = await TestCase.create(testCaseObj);
                         if(getPendingTestCase != null && getPendingTestCase.status != 'completed'){
@@ -368,17 +367,43 @@ async function postTestCase (req,res){
 
 //Function to convert json testcase from csv file.
 async function getjsonfromcsv (req,res) {
-    let { csvFile } = req.body;
+    let date = new Date();
+   // let action = "Added scenario";
+    let userID = req.user.payload.userId;
+    let actedBy = req.user.payload.user.fName;
+    let projectId = req.params.projectID;
+    let testcasecode
+    let getScenario;
+    let getTitle;
+    let getDescription;
+    let getScenarioID;
+    let getPriority;
+
     try {
-        console.log("Hello");
-        let csvFilePath = `/home/kaushal/Desktop/workspace-storeking/test-case-api-service/csv_attachment/${csvFile}`;
-       // console.log(csvFilePath);
-        let jsonArray = await csvtojson().fromFile(csvFilePath);
-        //console.log("jsonArray ---> ", jsonArray);
+        let jsonArray = await csvtojson().fromFile(req.file.path);
         let testObj = Object.assign({},jsonArray);
         let result = Object.values(testObj);
+
         console.log("result --- >", result);
-        await TestCase.create(result);
+
+            for(let i =0; i<result.length; i++){
+                getNextSequenceValue("testCaseCode").then(async data => {
+                    testcasecode = 'TC'+ data;
+                });
+                getScenario = result[i].scenario;
+                getTitle = result[i].title;
+                getDescription = result[i].testDescriptions;
+                getPriority = result[i].priority;
+
+                let generatedScenario = await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date});
+                console.log("generatedScenario --- > ", generatedScenario);
+                getScenarioID = generatedScenario._id;
+
+                let generateTestCase = await TestCase.create({"testCaseCode" : testcasecode, "title" : getTitle, "projectID" : projectId, "userID" : userID, "testDescriptions" : getDescription, "scenarioID" : getScenarioID, "scenario" : getScenario, "createdBy" : actedBy, "createdOn" : date, "priority" : getPriority});
+                console.log("generateTestCase --- > ", generateTestCase);
+            }
+              
+       // await TestCase.create(result);
         res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
     } catch (error) {
         console.log(error);
@@ -597,70 +622,61 @@ async function postRunLog (req,res) {
 
         let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}] });
         let getProject = await Project.findOne({"_id" : projectId});
-        let title = getProject.nameOfProject
+        let title = getProject.nameOfProject;
 
         if(remark == "" || status == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
-            getNextSequenceValue("runLogCode").then(async data => {
-                let runlogcode = 'RL'+ data;
-                totalTestCase = getTestCase.length;
-                runLogObj["runLogCode"] = runlogcode;
-                runLogObj["totalTestCase"] = totalTestCase;
-                let countPassed = 0;
-                let countFailed = 0;
-                let countPending = 0;
-
-
-                // let testCase = await TestCase.find({"projectID" : projectId});
-                //let runLog = await RunLog.findOn
-
-                // if()
-                
-                // for(let i = 0; i<testCase.length; i++){
-                //     if(testCase[i].status == "passed"){
-                //         countPassed = countPassed + 1;
-                //     }
-                //     if(testCase[i].status == "failed"){
-                //         countFailed = countFailed + 1;
-                //     }
-                //     if(testCase[i].status == "pending"){
-                //         countPending = countPending + 1;
-                //     }
-                // }
-
-                for(let i = 0; i<getTestCase.length; i++){
-                    let imgAttachments = [];
-                    let videoAttachment = [];
-                    let testCaseStatus = 'pending';
-                    //let priority = "medium";
-                    let testCaseId = getTestCase[i]._id; 
-                    console.log("testCaseId --- > ", testCaseId);
-                    await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : imgAttachments, "videoAttachment" : videoAttachment, "status" : testCaseStatus});
+            let checkRunLog = await RunLog.find();
+                for(let i = 0; i<checkRunLog.length; i++){
+                    if(checkRunLog[i].status == "created" || checkRunLog[i].status == "started"){
+                        res.json({ message : "Please Complete the previous runlog before proceeding to new runlog!!!"});
+                    }else{
+                        getNextSequenceValue("runLogCode").then(async data => {
+                            let runlogcode = 'RL'+ data;
+                            totalTestCase = getTestCase.length;
+                            runLogObj["runLogCode"] = runlogcode;
+                            runLogObj["totalTestCase"] = totalTestCase;
+                            let countPassed = 0;
+                            let countFailed = 0;
+                            let countPending = 0;
+            
+                            for(let i = 0; i<getTestCase.length; i++){
+                                if(getTestCase[i].status == "passed"){
+                                    countPassed = countPassed + 1;
+                                }
+                                if(getTestCase[i].status == "failed"){
+                                    countFailed = countFailed + 1;
+                                }
+                                if(getTestCase[i].status == "pending"){
+                                    countPending = countPending + 1;
+                                }
+                            }
+                            
+                            runLogObj["testCasePassed"] = countPassed;
+                            runLogObj["testCaseFailed"] = countFailed;
+                            runLogObj["testCasePending"] = countPending;
+                            runLogObj["testCaseList"] = getTestCase;
+                            
+                            runLogObj["projectTitle"] = title;
+            
+                            await RunLog.create(runLogObj);
+                            let result = {
+                                status : 'success',
+                                data : {
+                                    message : "Successfully added run log!!!"
+                                }
+                            }
+                            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                            res.status(200).json(result);
+                         }).catch(error => {
+                        console.log(error);
+                        res.status(400).json( { message : error });
+                    });    
                 }
-
-                console.log("getTestCase -- > ", getTestCase);
-                runLogObj["testCasePassed"] = countPassed;
-                runLogObj["testCaseFailed"] = countFailed;
-                //runLogObj["testCasePending"] = countPending;
-                runLogObj["testCasePending"] = totalTestCase;
-                runLogObj["testCaseList"] = getTestCase;
-                runLogObj["projectTitle"] = title;
-
-                await RunLog.create(runLogObj);
-                let result = {
-                    status : 'success',
-                    data : {
-                        message : "Successfully added run log!!!"
-                    }
-                }
-                await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
-                res.status(200).json(result);
-             }).catch(error => {
-            console.log(error);
-            res.status(400).json( { message : error });
-          });    
+            }
         }
+            
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -699,8 +715,11 @@ async function updateRunLog (req,res) {
  
     try {
         let { comment, imageOrAttachment, status, remark, relevantData } = req.body;
-        let Data = await RunLog.findOne({"_id" : runlogId})
+        let Data = await RunLog.findOne({"_id" : runlogId, "condition" : "Active"})
         let projectId = Data.projectId;
+        let countPassed = 0;
+        let countFailed = 0;
+        let countPending = 0;
         if(Data == null){
             res.status(400).json({ message : "The required runlog is not present!"})
         }else{
@@ -719,8 +738,48 @@ async function updateRunLog (req,res) {
                 setQuery["remark"] = remark ;
             }
 
-            await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date});
+            let getTestCase = await TestCase.find({"projectID": projectId, "condition" : "Active"})
+
+            
+
+            for(let i = 0; i<getTestCase.length; i++){
+                    if(getTestCase[i].status == "passed"){
+                        countPassed = countPassed + 1;
+                    }
+                    if(getTestCase[i].status == "failed"){
+                        countFailed = countFailed + 1;
+                    }
+                    if(getTestCase[i].status == "pending"){
+                        countPending = countPending + 1;
+                    }
+                }
+         
+            
+            if(comment) {
+                setQuery["comment"] = comment;
+                }
+            if(imageOrAttachment) {
+                setQuery["imageOrAttachment"] = imageOrAttachment;
+                }
+            if(status) {
+                setQuery["status"] = status;
+                }
+            if(remark) {
+                setQuery["remark"] = remark ;
+            }    
+           
+            await RunLog.findOneAndUpdate({ "_id": runlogId }, { $set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testCasePassed" : countPassed, "testCaseFailed" : countFailed, "testCasePending" : countPending});
+
+            if(status == 'completed'){
+                for(let i = 0; i<getTestCase.length; i++){
+                    //let priority = "medium";
+                    let testCaseId = getTestCase[i]._id;
+                    await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : [], "videoAttachment" : [], "status" : 'pending'});
+                }
+            }
+
             let runlogcode = Data.runLogCode;
+
             await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
           res.status(200).json({ message :"Updated runLog details"});
         } 
@@ -1010,7 +1069,7 @@ async function getCsvOfTestcase (req,res){
 
 async function getAllTestCases (req,res) {
     try {
-        let result = await TestCase.find();
+        let result = await TestCase.find({"condition" : "Active"}).sort({_id : -1});
         res.status(200).json(result)
     } catch (error) {
         res.status(400).json({ message : "Sorry cannot fing test cases"});
@@ -1019,7 +1078,7 @@ async function getAllTestCases (req,res) {
 
 async function getAllRunLogs (req,res) {
     try {
-        let result = await RunLog.find();
+        let result = await RunLog.find({"condition" : "Active"}).sort({_id : -1});
         res.status(200).json(result)
     } catch (error) {
         res.status(400).json({ message : "Sorry cannot fing runlogs"});
