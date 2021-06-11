@@ -507,6 +507,9 @@ async function updateTestCase (req,res) {
             if(remark) {
                 setQuery["remark"] = remark;
             }
+            if(priority == null){
+                priority = Data.priority;
+            }
 
             await TestCase.findByIdAndUpdate({"_id" : testcaseId}, {$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, "testedBy" : actedBy, "priority" : priority});
             await TestCase.findOneAndUpdate({"_id" : testcaseId}, {$set : {"testedBy" : testedBy}});
@@ -677,7 +680,7 @@ async function postRunLog (req,res) {
                             message : "Successfully added run log!!!"
                             }
                         }
-                    res.status(200).json(result);
+                  res.status(200).json(result);
                 }
             }).catch(error => {
                 console.log(error);
@@ -781,9 +784,9 @@ async function updateRunLog (req,res) {
 
             if(status == 'completed'){
                 for(let i = 0; i<getTestCase.length; i++){
-                    //let priority = "medium";
+                    let priority = getTestCase[i].priority;
                     let testCaseId = getTestCase[i]._id;
-                    await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : [], "videoAttachment" : [], "status" : 'pending'});
+                    await TestCase.findOneAndUpdate({ "_id" : testCaseId }, {"imageOrAttachment" : [], "videoAttachment" : [], "status" : 'pending', 'priority' : priority});
                 }
             }
 
