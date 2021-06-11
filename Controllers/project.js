@@ -615,6 +615,12 @@ async function postRunLog (req,res) {
     let testCaseFailed;
     let testCasePending;
     let testCaseList = [];
+    let runlogcode;
+    let result;
+    let countPassed = 0;
+    let countFailed = 0;
+    let countPending = 0;
+    let flag = false;
  
     try {
         let { remark, imageOrAttachment, filename, pdfFileName, status, relevantData } = req.body;
@@ -627,56 +633,59 @@ async function postRunLog (req,res) {
         if(remark == "" || status == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
-            let checkRunLog = await RunLog.find();
+            let checkRunLog = await RunLog.find({"condition" : "Active"});
+
+            if(checkRunLog != []){
                 for(let i = 0; i<checkRunLog.length; i++){
                     if(checkRunLog[i].status == "created" || checkRunLog[i].status == "started"){
-                        res.json({ message : "Please Complete the previous runlog before proceeding to new runlog!!!"});
-                    }else{
-                        getNextSequenceValue("runLogCode").then(async data => {
-                            let runlogcode = 'RL'+ data;
-                            totalTestCase = getTestCase.length;
-                            runLogObj["runLogCode"] = runlogcode;
-                            runLogObj["totalTestCase"] = totalTestCase;
-                            let countPassed = 0;
-                            let countFailed = 0;
-                            let countPending = 0;
-            
-                            for(let i = 0; i<getTestCase.length; i++){
-                                if(getTestCase[i].status == "passed"){
-                                    countPassed = countPassed + 1;
-                                }
-                                if(getTestCase[i].status == "failed"){
-                                    countFailed = countFailed + 1;
-                                }
-                                if(getTestCase[i].status == "pending"){
-                                    countPending = countPending + 1;
-                                }
-                            }
-                            
-                            runLogObj["testCasePassed"] = countPassed;
-                            runLogObj["testCaseFailed"] = countFailed;
-                            runLogObj["testCasePending"] = countPending;
-                            runLogObj["testCaseList"] = getTestCase;
-                            
-                            runLogObj["projectTitle"] = title;
-            
-                            await RunLog.create(runLogObj);
-                            let result = {
-                                status : 'success',
-                                data : {
-                                    message : "Successfully added run log!!!"
-                                }
-                            }
-                            await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
-                            res.status(200).json(result);
-                         }).catch(error => {
-                        console.log(error);
-                        res.status(400).json( { message : error });
-                    });    
-                }
+                        flag = true;
+                        continue;
+                        //res.status(400).json({ message : "Please Complete the previous runlog before proceeding to new runlog!!!"});
+                    }
             }
-        }
+            getNextSequenceValue("runLogCode").then(async data => {
+                runlogcode = 'RL'+ data;
+                totalTestCase = getTestCase.length;
+                runLogObj["runLogCode"] = runlogcode;
+                runLogObj["totalTestCase"] = totalTestCase;
+                for(let i = 0; i<getTestCase.length; i++){
+                    if(getTestCase[i].status == "passed"){
+                        countPassed = countPassed + 1;
+                    }
+                    if(getTestCase[i].status == "failed"){
+                        countFailed = countFailed + 1;
+                    }
+                    if(getTestCase[i].status == "pending"){
+                        countPending = countPending + 1;
+                    }
+                }
+
+                runLogObj["testCasePassed"] = countPassed;
+                runLogObj["testCaseFailed"] = countFailed;
+                runLogObj["testCasePending"] = countPending;
+                runLogObj["testCaseList"] = getTestCase;
+                runLogObj["projectTitle"] = title;
+                
+                await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
+                if(flag == true){
+                    res.status(400).json({ message : "Please Complete the previous runlog before proceeding to new runlog!!!"});
+                }else{
+                    await RunLog.create(runLogObj);
+                    result = {
+                        status : 'success',
+                            data : {
+                            message : "Successfully added run log!!!"
+                            }
+                        }
+                    res.status(200).json(result);
+                }
+            }).catch(error => {
+                console.log(error);
+                res.status(400).json( { message : error });
+            });  
+        } 
             
+        }    
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
