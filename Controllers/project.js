@@ -1066,6 +1066,27 @@ async function postVideoAttachment (req,res) {
     }
 }
 
+async function postFileAttachment (req,res) {
+    let testcaseid = req.params.testCaseID;
+    let { runLogId } = req.body;
+    try {
+        let attachments = [];
+
+        if(req.files != undefined){
+        for(let i = 0; i<req.files.length; i++){
+            attachments.push(req.files[i].originalname);
+           }
+        }
+        
+        await TestCase.findOneAndUpdate({"_id" : testcaseid}, {$push : {"fileAttachment" : attachments}});
+        await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseid}, {$push : {"testCaseList.$.fileAttachment" : attachments}});
+        res.status(200).json("File Attachments are uploaded!!!")
+    } catch (error) {
+        console.log(error);
+        res.status(400).json("File Attachments not uploaded!!!")
+    }
+}
+
 async function getCsvOfTestcase (req,res){
     let date = new Date();
     let action = "Generated csv for test case and downloaded";
@@ -1151,5 +1172,6 @@ module.exports = {
     postAttachmentsForProject : postAttachmentsForProject,
     getTestcaseVideoAttachment : getTestcaseVideoAttachment,
     getAllTestCases : getAllTestCases,
-    getAllRunLogs : getAllRunLogs
+    getAllRunLogs : getAllRunLogs,
+    postFileAttachment : postFileAttachment
 }

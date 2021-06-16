@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { strict } = require('yargs');
 
 const runLogSchema = new mongoose.Schema({
     runLogCode : {
@@ -58,6 +59,7 @@ const runLogSchema = new mongoose.Schema({
         videoAttachment : [{
             type : String
         }],
+        fileAttachment : [{ type : String}],
         priority : { type : String },
         projectTitle : { type : String}
     }],

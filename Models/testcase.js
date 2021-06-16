@@ -66,6 +66,10 @@ const testCaseSchema=new mongoose.Schema({
         type : String
     }],
 
+    fileAttachment : [{
+        type : String
+    }],
+
     createdBy : {
         type : String
     },

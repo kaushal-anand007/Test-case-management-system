@@ -74,9 +74,7 @@ const videoAttachment = multer({
 //Csv upload.
 const csvUpload = multer.diskStorage({
     destination : function(req, file, cb){
-        //console.log("file --->", file);
         cb(null, 'public/csv');
-       // console.log("file --->", file);
     },
     filename : function(req, file, cb) {
         cb(null, file.originalname);
@@ -87,6 +85,19 @@ const csv = multer({
     storage : csvUpload
 });
 
+//Testcase File Attachments.
+const storage3 = multer.diskStorage({
+    destination : function(req, file, cb){
+        cb(null, 'public/testcaseFileAttachments');
+    },
+    filename : function(req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+const fileAttachment = multer({
+    storage : storage3
+});
 
 //post project details.
 router.post('/add/', verifyAccessTokenForUserId, getFeatureAccess, ProjectController.postProject);
@@ -170,7 +181,10 @@ router.post('/postImageAttachment/:testCaseID', imageOrAttachment.array('imageOr
 router.post('/postProjectAttachment/:projectID', upload.array('attachments'), ProjectController.postAttachmentsForProject)
 
 //Post VideoAttactments for testcases.
-router.post('/postVideoAttachment/:testCaseID', videoAttachment.array('videoAttachment'), ProjectController.postVideoAttachment)
+router.post('/postVideoAttachment/:testCaseID', videoAttachment.array('videoAttachment'), ProjectController.postVideoAttachment);
+
+//Post FileAttactments for testcases.
+router.post('/postFileAttachment/:testCaseID', fileAttachment.array('fileAttachment'), ProjectController.postFileAttachment);
 
 //Get attachments for testcases.
 router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAttachment);
