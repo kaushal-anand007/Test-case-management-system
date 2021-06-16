@@ -111,6 +111,6 @@ const runLogSchema = new mongoose.Schema({
     },
 
     role : { type : String }
-})
+});
 
 module.exports = mongoose.model('RunLog', runLogSchema);

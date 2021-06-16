@@ -50,7 +50,7 @@ function getNextSequenceValue(sequenceName){
                 reject(error);
         });
     });
-};
+}
 
 //Adding Users
 async function registerUser (req,res) {
@@ -124,7 +124,7 @@ async function registerUser (req,res) {
         console.log(err);
         await res.status(400).json({ errors });
     }
-};
+}
 
 //Verify user
 async function verifyuser (req,res) {
@@ -437,7 +437,7 @@ async function updateUserById (req,res) {
     let userID = req.user.payload.userId;
     let usercode = req.user.payload.user.userCode;
     let actedBy = req.user.payload.user.fName; 
-    let userid = req.params.userID
+    let userid = req.params.userID;
 
     try{ 
     let users = await User.findOne({_id : userID});

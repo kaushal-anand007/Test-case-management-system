@@ -353,8 +353,15 @@ async function postTestCase (req,res){
                         let createdby = "";
             
                         getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, createdby, title, testDescriptions, scenario, actedBy, Date, Time);
-                        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
-                        res.status(200).json({message : "Successfully added test case"});
+                        let testcaseData = await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                        let result = {
+                            status : 'success',
+                            data : {
+                                message : " Project has sucessfully created ",
+                                testcaseID : testcaseData._id
+                            }
+                        } 
+                        res.status(200).json({message : result});
                             }).catch(error => {
                         console.log(error);
                     res.status(400).json( { message : error });
@@ -1080,10 +1087,10 @@ async function postFileAttachment (req,res) {
         
         await TestCase.findOneAndUpdate({"_id" : testcaseid}, {$push : {"fileAttachment" : attachments}});
         await RunLog.findOneAndUpdate({"_id" : runLogId, "testCaseList._id" : testcaseid}, {$push : {"testCaseList.$.fileAttachment" : attachments}});
-        res.status(200).json("File Attachments are uploaded!!!")
+        res.status(200).json("File Attachments are uploaded!!!");
     } catch (error) {
         console.log(error);
-        res.status(400).json("File Attachments not uploaded!!!")
+        res.status(400).json("File Attachments not uploaded!!!");
     }
 }
 
