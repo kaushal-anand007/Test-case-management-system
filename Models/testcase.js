@@ -14,6 +14,10 @@ const testCaseSchema=new mongoose.Schema({
         type : String
     },
 
+    projectCode : {   
+        type : String
+    },
+
     projectTitle : {
         type : String
     },

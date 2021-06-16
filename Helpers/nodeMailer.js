@@ -3,6 +3,14 @@ let date = new Date();
 let todayDate = date.toLocaleDateString();
 let time = date.toLocaleTimeString();
 
+var hours = date.getHours();
+var minutes = date.getMinutes();
+var ampm = hours >= 12 ? 'pm' : 'am';
+hours = hours % 12;
+hours = hours ? hours : 12; // the hour '0' should be '12'
+minutes = minutes < 10 ? '0'+minutes : minutes;
+var strTime = hours + ':' + minutes + ' ' + ampm;
+
 //Importig .env here.
 require('dotenv').config();
 
@@ -597,7 +605,26 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
                                                 <tr>
                                                   <td align="left">
                                                   <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
-                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Creation Date :-</span> ${todayDate} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style ="font-weight: 600;"> At:-</span>  ${time}</a>
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Creation Date :-</span> ${todayDate} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style ="font-weight: 600;"> At:-</span>  ${strTime}</a>
+                                                        
+                                                  </td>
+                                                  <td align="left" colspan="2">
+                                                        
+                                                  </td>
+                                                </tr>
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                              </table>
+                                              <table width="600" height="2" align="center" border="0" cellpadding="0" cellspacing="0" style="border-bottom: 1px solid #F0F0F0"></table>
+                                              <table align="center" width="520" border="0" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                  <td colspan="3" align="center" height="24"></td>
+                                                </tr>
+                                                <tr>
+                                                  <td align="left">
+                                                  <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;"> Created By :-</span> ${createdby}</a>
                                                         
                                                   </td>
                                                   <td align="left" colspan="2">
@@ -850,7 +877,7 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
                                                 <tr>
                                                   <td align="left">
                                                   <a href="https://www.freelancer.com/users/login-instant.php?token=649a3dc0b0490579b03b1dca35134040b66f68c27e95d05b9490ddf434218411&amp;url=https%3A%2F%2Fwww.freelancer.com%2Fcampaign%2F0MEE180000007%2F%3Fl%3D%252Fbuyers%252Fonemailclick.php%253Ftitle%253DBuild%252Ba%252Bwebsite%252Bfor%252Bme%2526skills%253D3%252C17%2526budget_set%253Dfalse%2526utm_campaign%253D1clicktodo%2526utm_medium%253Demail%2526utm_source%253D&amp;userID=20264716&amp;expireAt=1470934682&amp;uniqid=20264716-2328-579f7f9a-f98035a6&amp;linkid=6"
-                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;">  Creation Time :-</span> ${time}</a>
+                                                  style="margin: 0; padding: 0; text-decoration: none; color: #161E2C; font-weight: normal; font-size: 24px; line-height: 32px; font-family:  Helvetica, Arial, sans-serif; text-align: left;"><span style ="font-weight: 600;">  Creation Time :-</span> ${strTime}</a>
                                                         
                                                   </td>
                                                   <td align="left" colspan="2">

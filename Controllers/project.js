@@ -12,6 +12,7 @@ const { Parser, transforms: { unwind }  } = require('json2csv');
 const User = require('../Models/user');
 const csvtojson = require("csvtojson");
 const path = require('path');
+const { title } = require('process');
 
 
 //Function to auto increment the usercode.
@@ -305,7 +306,8 @@ async function postTestCase (req,res){
     let {title, testDescriptions, scenarioID, relevantData, priority} = req.body;
     let project = await Project.findOne({"_id" : projectId})
     let projectName = project.nameOfProject
-    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "projectTitle" :  projectName, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority};
+    let projectcode = project.projectCode;
+    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "projectTitle" :  projectName, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority, "projectCode" : projectcode};
     if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
     }else{
@@ -368,7 +370,6 @@ async function postTestCase (req,res){
 //Function to convert json testcase from csv file.
 async function getjsonfromcsv (req,res) {
     let date = new Date();
-   // let action = "Added scenario";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
     let projectId = req.params.projectID;
@@ -378,33 +379,53 @@ async function getjsonfromcsv (req,res) {
     let getDescription;
     let getScenarioID;
     let getPriority;
+    let getProjectCode;
+    let getProjectTitle;
 
     try {
         let jsonArray = await csvtojson().fromFile(req.file.path);
         let testObj = Object.assign({},jsonArray);
         let result = Object.values(testObj);
 
-        console.log("result --- >", result);
+        let projectCODE = await Project.findOne({ $and : [{"_id" : projectId}, {"condition" : "Active"}]});
+     
+        let projectcode = projectCODE.projectCode;
+        let getprojectcode = result[0].projectCode;
 
-            for(let i =0; i<result.length; i++){
-                getNextSequenceValue("testCaseCode").then(async data => {
-                    testcasecode = 'TC'+ data;
-                });
-                getScenario = result[i].scenario;
-                getTitle = result[i].title;
-                getDescription = result[i].testDescriptions;
-                getPriority = result[i].priority;
-
-                let generatedScenario = await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date});
-                console.log("generatedScenario --- > ", generatedScenario);
-                getScenarioID = generatedScenario._id;
-
-                let generateTestCase = await TestCase.create({"testCaseCode" : testcasecode, "title" : getTitle, "projectID" : projectId, "userID" : userID, "testDescriptions" : getDescription, "scenarioID" : getScenarioID, "scenario" : getScenario, "createdBy" : actedBy, "createdOn" : date, "priority" : getPriority});
-                console.log("generateTestCase --- > ", generateTestCase);
+        if(getprojectcode != projectcode){
+            res.status(400).json({message : "This testcase is part of other project!!"});   
+         }else{
+            if(getTestCase != []){
+                let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}]}); 
+                for(let j=0; j< getTestCase.length; j++){
+                    let testCaseTitle = getTestCase[j].title;
+                    for(let k=0; k<result.length; k++){
+                        getTitle = result[k].title;
+                        if(getTitle == testCaseTitle){
+                            //throw new Error(`${getTitle} is already present!!`);    
+                            res.status(400).json({ message : `${testCaseTitle} is already present!!`}) 
+                        }
+                    } 
+                }   
+            }else{
+                for(let i =0; i<result.length; i++){
+                    getNextSequenceValue("testCaseCode").then(async data => {
+                        testcasecode = 'TC'+ data;
+                    });
+                    getScenario = result[i].scenario;
+                    getTitle = result[i].title;
+                    getDescription = result[i].testDescriptions;
+                    getPriority = result[i].priority;
+                    getProjectCode = result[i].projectCode;
+                    getProjectTitle = result[i].projectTitle;
+      
+                    let generatedScenario = await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date});
+                    getScenarioID = generatedScenario._id;
+                    await TestCase.create({"testCaseCode" : testcasecode, "title" : getTitle, "projectID" : projectId, "userID" : userID, "testDescriptions" : getDescription, "scenarioID" : getScenarioID, "scenario" : getScenario, "createdBy" : actedBy, "createdOn" : date, "priority" : getPriority, "projectCode" : getProjectCode, "projectTitle" : getProjectTitle});
+                }
+            res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
             }
-              
-       // await TestCase.create(result);
-        res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
+         }  
     } catch (error) {
         console.log(error);
         res.status(400).json({ message : error });
@@ -636,7 +657,7 @@ async function postRunLog (req,res) {
         if(remark == "" || status == ""){
             res.json({ message : "Please fill all the fields!!!"});
         }else{
-            let checkRunLog = await RunLog.find({"condition" : "Active"});
+            let checkRunLog = await RunLog.find({ $and : [{"projectId" : projectId}, {"condition" : "Active"}] });
 
             if(checkRunLog != []){
                 for(let i = 0; i<checkRunLog.length; i++){
