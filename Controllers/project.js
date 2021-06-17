@@ -357,7 +357,7 @@ async function postTestCase (req,res){
                         let result = {
                             status : 'success',
                             data : {
-                                message : " Project has sucessfully created ",
+                                message : " Test case has sucessfully created ",
                                 testcaseID : testcaseData._id
                             }
                         } 
@@ -993,7 +993,7 @@ async function getTestcaseAttachment (req,res){
         res.sendFile(filePath+`${attachment}`)
     } catch (error) {
         console.log(error);
-        res.status(400).json({message : "Error! File is not present."})
+        res.status(400).json({message : "Error! Image is not present."})
     }
 };
 
@@ -1001,6 +1001,17 @@ async function getTestcaseVideoAttachment (req,res){
     let attachment = req.params.filename
     try {
         let filePath = '/home/kaushal/Desktop/workspace-storeking/test-case-api-service/public/testcaseVideoAttachment/'
+        res.sendFile(filePath+`${attachment}`)
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({message : "Error! Video is not present."})
+    }
+};
+
+async function getTestcaseFileAttachment (req,res){
+    let attachment = req.params.filename
+    try {
+        let filePath = '/home/kaushal/Desktop/workspace-storeking/test-case-api-service/public/testcaseFileAttachments/'
         res.sendFile(filePath+`${attachment}`)
     } catch (error) {
         console.log(error);
@@ -1180,5 +1191,6 @@ module.exports = {
     getTestcaseVideoAttachment : getTestcaseVideoAttachment,
     getAllTestCases : getAllTestCases,
     getAllRunLogs : getAllRunLogs,
-    postFileAttachment : postFileAttachment
+    postFileAttachment : postFileAttachment,
+    getTestcaseFileAttachment : getTestcaseFileAttachment
 }

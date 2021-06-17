@@ -192,6 +192,9 @@ router.get('/get-testcase-attachment/:filename', ProjectController.getTestcaseAt
 //Get attachments for testcases video.
 router.get('/get-testcase-video-attachment/:filename', ProjectController.getTestcaseVideoAttachment);
 
+//Get attachments for testcases Files.
+router.get('/get-testcase-file-attachment/:filename', ProjectController.getTestcaseFileAttachment);
+
 //Get testcase CSV.
 router.get('/get-testcase-csv/:projectID', verifyAccessTokenForUserId, ProjectController.getCsvOfTestcase);
 
