@@ -353,12 +353,12 @@ async function postTestCase (req,res){
                         let createdby = "";
             
                         getMailThroughNodeMailer(fName, email, confirmationCode, html, filename, path, otp, password, csv, runcode, projectName, nameOfProject, handledBy, projectDescription, member, startDate, endDate, createdby, title, testDescriptions, scenario, actedBy, Date, Time);
-                        let testcaseData = await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
+                        await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : testcasecode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
                         let result = {
                             status : 'success',
                             data : {
                                 message : " Test case has sucessfully created ",
-                                testcaseID : testcaseData._id
+                                testcaseID : testCaseResult._id
                             }
                         } 
                         res.status(200).json({message : result});
@@ -402,35 +402,61 @@ async function getjsonfromcsv (req,res) {
         if(getprojectcode != projectcode){
             res.status(400).json({message : "This testcase is part of other project!!"});   
          }else{
+            let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}]});
+            let flag = false;
+            let testCaseTitle;
             if(getTestCase != []){
-                let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}]}); 
                 for(let j=0; j< getTestCase.length; j++){
-                    let testCaseTitle = getTestCase[j].title;
+                    testCaseTitle = getTestCase[j].title;
                     for(let k=0; k<result.length; k++){
-                        getTitle = result[k].title;
-                        if(getTitle == testCaseTitle){
-                            //throw new Error(`${getTitle} is already present!!`);    
-                            res.status(400).json({ message : `${testCaseTitle} is already present!!`}) 
+                        let getProjectTitle = result[k].title;
+                        if(getProjectTitle == testCaseTitle){
+                            flag = true;
+                            testCaseTitle = getProjectTitle;
                         }
                     } 
-                }   
-            }else{
-                for(let i =0; i<result.length; i++){
-                    getNextSequenceValue("testCaseCode").then(async data => {
-                        testcasecode = 'TC'+ data;
-                    });
-                    getScenario = result[i].scenario;
-                    getTitle = result[i].title;
-                    getDescription = result[i].testDescriptions;
-                    getPriority = result[i].priority;
-                    getProjectCode = result[i].projectCode;
-                    getProjectTitle = result[i].projectTitle;
-      
-                    let generatedScenario = await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date});
-                    getScenarioID = generatedScenario._id;
-                    await TestCase.create({"testCaseCode" : testcasecode, "title" : getTitle, "projectID" : projectId, "userID" : userID, "testDescriptions" : getDescription, "scenarioID" : getScenarioID, "scenario" : getScenario, "createdBy" : actedBy, "createdOn" : date, "priority" : getPriority, "projectCode" : getProjectCode, "projectTitle" : getProjectTitle});
                 }
-            res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
+                if(flag == true){    
+                    res.status(400).json({ message : `${testCaseTitle} is already present!!`}) 
+                }else{
+                    for(let i =0; i<result.length; i++){
+                        getNextSequenceValue("testCaseCode").then(async data => {
+                            testcasecode = 'TC'+ data;
+                        });
+        
+                        getScenario = result[i].scenario;
+                        getTitle = result[i].title;
+                        getDescription = result[i].testDescriptions;
+                        getPriority = result[i].priority;
+                        getProjectCode = result[i].projectCode;
+                        getProjectTitle = result[i].projectTitle;
+                        
+                        let getSenarioFromDb = await Scenario.find({"projectId" : projectId});
+                        
+                        if(getSenarioFromDb != []){
+                            let flag = false;
+                            console.log("jhshjshhj");
+                            for(let x=0; x<getSenarioFromDb.length; x++){
+                                let scenario = getSenarioFromDb[x].title;
+                                if(scenario == getScenario){
+                                    flag = true;
+                                }
+                            }
+                          
+                          if(flag == false){
+                            await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date, "projectId" : projectId});
+                          };
+
+                        }else{
+                            await Scenario.create({"title" : getScenario , "createdBy" : actedBy, "createdOn" : date, "projectId" : projectId});
+                        }
+
+                        let scenarioData = await Scenario.findOne({"title" : getScenario})
+                        getScenarioID = scenarioData._id;
+                        await TestCase.create({"testCaseCode" : testcasecode, "title" : getTitle, "projectID" : projectId, "userID" : userID, "testDescriptions" : getDescription, "scenarioID" : getScenarioID, "scenario" : getScenario, "createdBy" : actedBy, "createdOn" : date, "priority" : getPriority, "projectCode" : getProjectCode, "projectTitle" : getProjectTitle});
+                    }
+                res.status(200).json({ message : "CSV file sucessfull fetched and saved into db" }); 
+                }
             }
          }  
     } catch (error) {
