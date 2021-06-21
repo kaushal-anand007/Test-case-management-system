@@ -548,7 +548,7 @@ async function login (req,res) {
             if(user.role == null){
                 res.status(400).json({message : "The role is not been assign! Please contact Admin."})
             }else{
-                let usercode = user.userCode;
+            let usercode = user.userCode;
             let actedBy = user.fName;    
             //Current date and time.
             let date = new Date();
@@ -560,9 +560,7 @@ async function login (req,res) {
     
             if(user){
                 let getRole = user.role;
-                console.log("getRole --- > ",getRole);
                 let role = await Role.findOne({ "roleName" :  getRole});
-                console.log("role --- > ",role);
                 //Password Authentication.
                 let auth = await bcrypt.compare(password, user.password);
                     if(auth) {

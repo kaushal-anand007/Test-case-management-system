@@ -41,20 +41,23 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 //IMPORTS ROUTES
-const userRoute=require('./Routes/user');
+const userRoute = require('./Routes/user');
 app.use('/user', userRoute);
 
-const roleRoute=require('./Routes/role');
+const roleRoute = require('./Routes/role');
 app.use('/role', roleRoute);
 
-const featureRoute=require('./Routes/feature');
+const featureRoute = require('./Routes/feature');
 app.use('/feature', featureRoute);
 
-const projectRoute=require('./Routes/project');
+const projectRoute = require('./Routes/project');
 app.use('/project', projectRoute);
 
-const reportRoute=require('./Routes/report');
+const reportRoute = require('./Routes/report');
 app.use('/report', reportRoute);
+
+const dashBoardRoute = require('./Routes/dashboard');
+app.use('/dashboard', dashBoardRoute);
 
 app.get('/getPDF', (req,res) => {
     let getpdf = req.query;

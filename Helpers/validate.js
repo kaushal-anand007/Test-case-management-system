@@ -38,6 +38,7 @@ async function verifyAccessTokenForUserId(req, res, next) {
     try {
         decoded = jwt.verify(jwt_token, secretKey);
     } catch (err) {
+        console.log(err);
         return res.status(401).send('unauthorized');
     }
     req.user = jwt.decode(jwt_token, { complete: true });
