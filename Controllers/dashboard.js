@@ -20,16 +20,19 @@ async function getAdminDashBoard(userID, userName){
         
                 let recentlyCreatedProject = await Project.find().sort({_id : -1}).limit(10);
                 adminDataObj["recentlyCreatedProject"] = recentlyCreatedProject;
-        
-                let projectCrossedDeadLine = await Project.find({});
-                for(let i=0; i<projectCrossedDeadLine.length; i++){
-                    let getProject = projectCrossedDeadLine[i];
-                    let getEndDate = projectCrossedDeadLine[i].endDate;
+                
+                let projectCrossedDeadLine = [];
+                let projectCrossedDeadLineData = await Project.find({});
+                for(let i=0; i<projectCrossedDeadLineData.length; i++){
+                    let getProject = projectCrossedDeadLineData[i];
+                    let getEndDate = projectCrossedDeadLineData[i].endDate;
                     let getenddate = getEndDate.getDate();
                     if(getdate > getenddate){
-                        adminDataObj["projectCrossedDeadLine"] = getProject;
+                        projectCrossedDeadLine.push(getProject)
                     }
                 }
+
+                adminDataObj["projectCrossedDeadLine"] = projectCrossedDeadLine;
                 
                 let projectOnGoing = await Project.find({$or : [{"status" : "pending"},{ $or : [{"status" : "created"}, {"status" : "progress"}]}]});
                 adminDataObj["projectOnGoing"] = projectOnGoing;
@@ -56,45 +59,76 @@ async function getQAManagerDashBoard(userID, userName){
         try {
             let qaManagerDataObj = {};
 
-            let projectData = await Project.find({$and : [{"condition" : "Active"}, {"handledBy.$._id" : userID}]});
-    
+            let projectData = await Project.find({$and : [ {"condition" : "Active"}, {$or : [{"handledBy._id" : userID}, {"createdBy" : userName}]} ]});
+           // console.log("projectData --- > ", projectData);
+            
             let projectCreatedByQAManager = await Project.find({$and : [{"condition" : "Active"}, {"createdBy" : userName}]});
             qaManagerDataObj["projectCreatedByQAManager"] = projectCreatedByQAManager;
     
-            let projectQAMangerIsLead = await Project.find({$and : [{"condition" : "Active"}, {"handledBy.$._id" : userID}]});
-            console.log("projectQAMangerIsLead --- > ", projectQAMangerIsLead);
+            let projectQAMangerIsLead = await Project.find({$and : [{"condition" : "Active"}, {"handledBy._id" : userID}]});
             qaManagerDataObj["projectQAMangerIsLead"] = projectQAMangerIsLead;
-    
-            let projectCrossedDeadLine = await Project.find({});
-            qaManagerDataObj["projectQAMangerIsLead"] = projectCrossedDeadLine;
-    
-            let projectOnGoing = await Project.find({$or : [{"status" : "pending", $or : [{"status" : "created"}, {"status" : "progress"}]}]});
+            
+            let projectCrossedDeadLine = [];
+            let projectOnGoing = [];
+            let projectCompleted = [];
+            let projectReject = []
+            for(let k=0; k<projectData.length; k++){
+                let endDate = projectData[k].endDate;
+                if(date > endDate){
+                    projectCrossedDeadLine.push(projectData[k]);                                        
+                }
+
+                let status = projectData[k].status;
+                if(status == "pending" || status == "created" || status == "progress"){
+                    projectOnGoing.push(projectData[k]);
+                }
+                
+                if(status == "complete"){
+                    projectCompleted.push(projectData[k]);
+                }
+
+                if(status == "rejected"){
+                    projectReject.push(projectData[k]);
+                }
+            };
+
+            qaManagerDataObj["projectCrossedDeadLine"] = projectCrossedDeadLine;
             qaManagerDataObj["projectOnGoing"] = projectOnGoing;
-    
-            let projectCompleted = await Project.find({"status" : "complete"});
             qaManagerDataObj["projectCompleted"] = projectCompleted;
-    
-            let projectReject = await Project.find({"status" : "rejected"});
             qaManagerDataObj["projectReject"] = projectReject;
+
     
-            let memberActivities;
-            let tescaseAddedOrUpdatedToday;
-            let runlogAddedOrUpdatedTodat;
+            let memberActivitie = [];
+            let tescaseAddedOrUpdatedToday = [];
+            let runlogAddedOrUpdatedToday = [];
             for(let i=0; i<projectData.length; i++){
                 let projectMembersData = projectData[i].members;
                 for(let j=0; j<projectMembersData.length; j++){
                     let membersId = projectMembersData[j]._id;
+                   // console.log("membersId --- > ", membersId);
     
-                    memberActivities = await Logs.find({"UserID" : membersId});
-                    qaManagerDataObj["memberActivities"] = memberActivities;
+                    let memberActivities = await Logs.find({"UserID" : membersId});
+                    for(let l=0; l<memberActivities.length; l++){
+                        memberActivitie.push(memberActivities[l]);
+                    }
     
-                    tescaseAddedOrUpdatedToday = await TestCases({ $or : [{"createdOn" : date}, {"modifiedOn" : date}]}, {"_id" : membersId});
-                    qaManagerDataObj["tescaseAddedOrUpdatedToday"] = tescaseAddedOrUpdatedToday;
+                    let tescaseData = await TestCases({$and : [{$and : [{"createdOn" : date}, {"modifiedOn" : date}]}, {"_id" : membersId}]});
+                    for(let m=0; m<tescaseData.length; m++){
+                        tescaseAddedOrUpdatedToday.push(tescaseData[m]);
+                    }
+                    
     
-                    runlogAddedOrUpdatedTodat = await RunLog({ $or : [{"createdOn" : date}, {"modifiedOn" : date}]}, {"_id" : membersId})
-                    qaManagerDataObj["runlogAddedOrUpdatedTodat"] = runlogAddedOrUpdatedTodat;
+                    let runlogData = await RunLog({$and : [{$and : [{"createdOn" : date}, {"modifiedOn" : date}]}, {"_id" : membersId}]})
+                    for(let n=0; n<runlogData.length; n++){
+                        tescaseAddedOrUpdatedToday.push(runlogData[n]);
+                    }
                 }
             }
+
+            qaManagerDataObj["memberActivitie"] = memberActivitie;
+            qaManagerDataObj["tescaseAddedOrUpdatedToday"] = tescaseAddedOrUpdatedToday;
+            qaManagerDataObj["runlogAddedOrUpdatedToday"] = runlogAddedOrUpdatedToday;
+
             resolve(qaManagerDataObj)
         } catch (error) {
             console.log("error --- > ", error);
@@ -107,7 +141,9 @@ async function getQALeadDashBoard (userID, userName){
     return new Promise( async (resolve,reject) => {
         try {
             let qaLeadDataObj = {};
+
                     let project;
+                    let totalProject = [];
                     let projectQALeadPartOf = await Project.find();
                     for(let i=0; i<projectQALeadPartOf.length; i++){
                         let projectMembers = projectQALeadPartOf[i].members;
@@ -115,31 +151,52 @@ async function getQALeadDashBoard (userID, userName){
                         for(let j=0; j<projectMembers.length; j++){
                             let memberId = projectMembers[j]._id;
                             if(memberId == userID){
-                                qaLeadDataObj["totalProject"] = project;
+                                totalProject.push(project);
                             }
                         }
                     };
                     
-                    let testCaseCreatedAndModified = await TestCases.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
+                    qaLeadDataObj["totalProject"] = totalProject;
+                    
+                    let testCaseCreatedAndModified = [];
+                    let testCaseData = await TestCases.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
+                    for(let k=0; k<testCaseData.length; k++){
+                        testCaseCreatedAndModified.push(testCaseData[k])
+                    }
+
                     qaLeadDataObj["testCaseCreatedAndModified"] = testCaseCreatedAndModified;
             
-                    let runLogCreatedOrModified = await RunLog.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
-                    qaLeadDataObj["runLogCreatedOrModified"] = runLogCreatedOrModified;
+                    let runLogCreatedAndModified = [];
+                    let runLogData = await RunLog.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
+                    for(let l=0; l<runLogData.length; l++){
+                        runLogCreatedAndModified.push(runLogData[l])
+                    }
+
+                    qaLeadDataObj["runLogCreatedAndModified"] = runLogCreatedAndModified;
             
-                    let tescaseToBeDone;
-                    let runlogToBeDone;
+                    let tescaseToBeDone = [];
+                    let runlogToBeDone = [];
                     for(let i=0; i<project.length; i++){
                         let projectMembersData = project[i].members;
                         for(let j=0; j<projectMembersData.length; j++){
                             let membersId = projectMembersData[j]._id;
             
-                            tescaseToBeDone = await TestCases({"_id" : membersId});
-                            qaLeadDataObj["tescaseToBeDone"] = tescaseToBeDone;
+                            let tescaseData = await TestCases({"_id" : membersId});
+                            for(let m=0; m<tescaseData.length; m++){
+                                tescaseToBeDone.push(tescaseData[m]);
+                            };
+                            
             
-                            runlogToBeDone = await RunLog({"_id" : membersId})
-                            qaLeadDataObj["runlogToBeDone"] = runlogToBeDone;
+                            let runlogData = await RunLog({"_id" : membersId});
+                            for(let n=0; n<runlogData.length; n++){
+                                runlogToBeDone.push(runlogData[n]);
+                            };  
                         }
                     }
+
+                    qaLeadDataObj["tescaseToBeDone"] = tescaseToBeDone;
+                    qaLeadDataObj["runlogToBeDone"] = runlogToBeDone;
+
                     resolve(qaLeadDataObj)
         } catch (error) {
             console.log("error --- > ", error);
@@ -152,34 +209,44 @@ async function getTesterDashBoard (userID, userName){
     return new Promise( async (resolve,reject) => {
         try {
             let testerDataObj = {};
-            let tescaseToBeDone;
-            let runlogToBeDone;
             let project;
             let projectTesterPartOf = await Project.find();
-    
+            
+            let totalProject = [];
             for(let i=0; i<projectTesterPartOf.length; i++){
                 let projectMembers = projectTesterPartOf[i].members;
                 project = projectTesterPartOf[i];
                 for(let j=0; j<projectMembers.length; j++){
                     let memberId = projectMembers[j]._id;
                     if(memberId == userID){
-                        testerDataObj["totalProject"] = project;
+                        totalProject.push(project);
                     }
                 }
             };
-    
+
+            testerDataObj["totalProject"] = totalProject;
+            
+            let tescaseToBeDone = [];
+            let runlogToBeDone = [];
             for(let i=0; i<project.length; i++){
                 let projectMembersData = project[i].members;
                 for(let j=0; j<projectMembersData.length; j++){
                     let membersId = projectMembersData[j]._id;
     
-                    tescaseToBeDone = await TestCases({"_id" : membersId});
-                    testerDataObj["tescaseToBeDone"] = tescaseToBeDone;
-    
-                    runlogToBeDone = await RunLog({"_id" : membersId})
-                    testerDataObj["runlogToBeDone"] = runlogToBeDone;
+                    let tescaseData = await TestCases({"_id" : membersId});
+                    for(let k=0; k<tescaseData.length; k++){
+                        tescaseToBeDone.push(tescaseData[k]);
+                    }
+                    
+                    let runlogData = await RunLog({"_id" : membersId});
+                    for(let l=0; l<runlogData.length; l++){
+                        runlogToBeDone.push(runlogData[l]);
+                    }
                 }
             }
+
+            testerDataObj["tescaseToBeDone"] = tescaseToBeDone;
+            testerDataObj["runlogToBeDone"] = runlogToBeDone;
     
             resolve(testerDataObj); 
         } catch (error) {
