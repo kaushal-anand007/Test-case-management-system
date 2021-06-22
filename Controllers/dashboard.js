@@ -8,7 +8,7 @@ const Counters = require('../Models/counter');
 const date = new Date();
 const todayDate = date.toLocaleDateString(); 
 
-async function getAdminDashBoard(userID, userName){
+async function getAdminDashBoard(userID, userName, requiredRoute){
         return new Promise(async (resolve,reject) => {
             try {
                 let getdate = date.getDate();
@@ -16,10 +16,10 @@ async function getAdminDashBoard(userID, userName){
                 let adminDataObj = {};
         
                 let totalProject = await Project.find({"condition" : "Active"});
-                adminDataObj["totalProject"] = totalProject;
+                // adminDataObj["totalProjectForAdmin"] = totalProject;
         
                 let recentlyCreatedProject = await Project.find().sort({_id : -1}).limit(10);
-                adminDataObj["recentlyCreatedProject"] = recentlyCreatedProject;
+                // adminDataObj["recentlyCreatedProjectForAdmin"] = recentlyCreatedProject;
                 
                 let projectCrossedDeadLine = [];
                 let projectCrossedDeadLineData = await Project.find({});
@@ -32,19 +32,47 @@ async function getAdminDashBoard(userID, userName){
                     }
                 }
 
-                adminDataObj["projectCrossedDeadLine"] = projectCrossedDeadLine;
+                // adminDataObj["projectCrossedDeadLineForAdmin"] = projectCrossedDeadLine;
                 
                 let projectOnGoing = await Project.find({$or : [{"status" : "pending"},{ $or : [{"status" : "created"}, {"status" : "progress"}]}]});
-                adminDataObj["projectOnGoing"] = projectOnGoing;
+                // adminDataObj["projectOnGoingForAdmin"] = projectOnGoing;
         
                 let projectCompleted = await Project.find({"status" : "complete"});
-                adminDataObj["projectCompleted"] = projectCompleted;
+                // adminDataObj["projectCompletedForAdmin"] = projectCompleted;
         
                 let projectReject = await Project.find({"status" : "rejected"});
-                adminDataObj["projectReject"] = projectReject;
+                // adminDataObj["projectRejectForAdmin"] = projectReject;
         
                 let recentActivities = await Logs.find({}).sort({_id : -1}).limit(10);
-                adminDataObj["recentActivities"] = recentActivities;
+                // adminDataObj["recentActivitiesForAdmin"] = recentActivities;
+
+                switch (requiredRoute) {
+                    case "totalProjectForAdmin":
+                        adminDataObj["totalProjectForAdmin"] = totalProject;
+                        break;
+                    case "recentlyCreatedProjectForAdmin":
+                        adminDataObj["recentlyCreatedProjectForAdmin"] = recentlyCreatedProject;
+                        break;
+                    case "projectCrossedDeadLineForAdmin":
+                        adminDataObj["projectCrossedDeadLineForAdmin"] = projectCrossedDeadLine;
+                        break;  
+                    case "projectOnGoingForAdmin":
+                        adminDataObj["projectOnGoingForAdmin"] = projectOnGoing;
+                        break;
+                    case "projectCompletedForAdmin":
+                        adminDataObj["projectCompletedForAdmin"] = projectCompleted;
+                        break;
+                    case "projectRejectForAdmin":
+                        adminDataObj["projectRejectForAdmin"] = projectReject;
+                        break;
+                    case "recentActivitiesForAdmin":
+                        adminDataObj["recentActivitiesForAdmin"] = recentActivities;
+                        break;                           
+                    default:
+                        adminDataObj["error"] = "Router your are requesting for is not present!"
+                        break;
+                }
+
                 resolve(adminDataObj);  
             } catch (error) {
                 console.log("error -- > ", error);
@@ -54,7 +82,7 @@ async function getAdminDashBoard(userID, userName){
         })
 };
 
-async function getQAManagerDashBoard(userID, userName){
+async function getQAManagerDashBoard(userID, userName, requiredRoute){
     return new Promise( async (resolve,reject) => {
         try {
             let qaManagerDataObj = {};
@@ -63,10 +91,10 @@ async function getQAManagerDashBoard(userID, userName){
            // console.log("projectData --- > ", projectData);
             
             let projectCreatedByQAManager = await Project.find({$and : [{"condition" : "Active"}, {"createdBy" : userName}]});
-            qaManagerDataObj["projectCreatedByQAManager"] = projectCreatedByQAManager;
+            // qaManagerDataObj["projectCreatedByQAManagerForQAManager"] = projectCreatedByQAManager;
     
             let projectQAMangerIsLead = await Project.find({$and : [{"condition" : "Active"}, {"handledBy._id" : userID}]});
-            qaManagerDataObj["projectQAMangerIsLead"] = projectQAMangerIsLead;
+            // qaManagerDataObj["projectQAMangerIsLeadForQAManager"] = projectQAMangerIsLead;
             
             let projectCrossedDeadLine = [];
             let projectOnGoing = [];
@@ -92,10 +120,10 @@ async function getQAManagerDashBoard(userID, userName){
                 }
             };
 
-            qaManagerDataObj["projectCrossedDeadLine"] = projectCrossedDeadLine;
-            qaManagerDataObj["projectOnGoing"] = projectOnGoing;
-            qaManagerDataObj["projectCompleted"] = projectCompleted;
-            qaManagerDataObj["projectReject"] = projectReject;
+            // qaManagerDataObj["projectCrossedDeadLineForQAManager"] = projectCrossedDeadLine;
+            // qaManagerDataObj["projectOnGoingForQAManager"] = projectOnGoing;
+            // qaManagerDataObj["projectCompletedForQAManager"] = projectCompleted;
+            // qaManagerDataObj["projectRejectForQAManager"] = projectReject;
 
     
             let memberActivitie = [];
@@ -125,9 +153,42 @@ async function getQAManagerDashBoard(userID, userName){
                 }
             }
 
-            qaManagerDataObj["memberActivitie"] = memberActivitie;
-            qaManagerDataObj["tescaseAddedOrUpdatedToday"] = tescaseAddedOrUpdatedToday;
-            qaManagerDataObj["runlogAddedOrUpdatedToday"] = runlogAddedOrUpdatedToday;
+            // qaManagerDataObj["memberActivitieForQAManager"] = memberActivitie;
+            // qaManagerDataObj["tescaseAddedOrUpdatedTodayForQAManager"] = tescaseAddedOrUpdatedToday;
+            // qaManagerDataObj["runlogAddedOrUpdatedTodayForQAManager"] = runlogAddedOrUpdatedToday;
+
+            switch (requiredRoute) {
+                case "projectCreatedByQAManagerForQAManager":
+                    qaManagerDataObj["projectCreatedByQAManagerForQAManager"] = projectCreatedByQAManager;
+                    break;
+                case "projectQAMangerIsLeadForQAManager":
+                    qaManagerDataObj["projectQAMangerIsLeadForQAManager"] = projectQAMangerIsLead;
+                    break;
+                case "projectCrossedDeadLineForQAManager":
+                    qaManagerDataObj["projectCrossedDeadLineForQAManager"] = projectCrossedDeadLine;
+                    break;  
+                case "projectOnGoingForQAManager":
+                    qaManagerDataObj["projectOnGoingForQAManager"] = projectOnGoing;
+                    break;
+                case "projectCompletedForQAManager":
+                    qaManagerDataObj["projectCompletedForQAManager"] = projectCompleted;
+                    break;
+                case "projectRejectForQAManager":
+                    qaManagerDataObj["projectRejectForQAManager"] = projectReject;
+                    break;
+                case "memberActivitieForQAManager":
+                    qaManagerDataObj["memberActivitieForQAManager"] = memberActivitie;
+                    break;
+                case "tescaseAddedOrUpdatedTodayForQAManager":
+                    qaManagerDataObj["tescaseAddedOrUpdatedTodayForQAManager"] = tescaseAddedOrUpdatedToday;
+                    break;  
+                case "runlogAddedOrUpdatedTodayForQAManager":
+                    qaManagerDataObj["runlogAddedOrUpdatedTodayForQAManager"] = runlogAddedOrUpdatedToday;
+                    break;                                       
+                default:
+                    qaManagerDataObj["error"] = "Router your are requesting for is not present!"
+                    break;
+            }
 
             resolve(qaManagerDataObj)
         } catch (error) {
@@ -137,11 +198,11 @@ async function getQAManagerDashBoard(userID, userName){
     });
 };
 
-async function getQALeadDashBoard (userID, userName){
+async function getQALeadDashBoard (userID, userName, requiredRoute){
     return new Promise( async (resolve,reject) => {
         try {
             let qaLeadDataObj = {};
-
+            
                     let project;
                     let totalProject = [];
                     let projectQALeadPartOf = await Project.find();
@@ -156,7 +217,7 @@ async function getQALeadDashBoard (userID, userName){
                         }
                     };
                     
-                    qaLeadDataObj["totalProject"] = totalProject;
+                    // qaLeadDataObj["totalProjectForQALead"] = totalProject;
                     
                     let testCaseCreatedAndModified = [];
                     let testCaseData = await TestCases.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
@@ -164,7 +225,7 @@ async function getQALeadDashBoard (userID, userName){
                         testCaseCreatedAndModified.push(testCaseData[k])
                     }
 
-                    qaLeadDataObj["testCaseCreatedAndModified"] = testCaseCreatedAndModified;
+                    // qaLeadDataObj["testCaseCreatedAndModifiedForQALead"] = testCaseCreatedAndModified;
             
                     let runLogCreatedAndModified = [];
                     let runLogData = await RunLog.find({$or : [{"createdBy" : userName}, {"modifiedBy" : userName}]});
@@ -172,7 +233,7 @@ async function getQALeadDashBoard (userID, userName){
                         runLogCreatedAndModified.push(runLogData[l])
                     }
 
-                    qaLeadDataObj["runLogCreatedAndModified"] = runLogCreatedAndModified;
+                    // qaLeadDataObj["runLogCreatedAndModifiedForQALead"] = runLogCreatedAndModified;
             
                     let tescaseToBeDone = [];
                     let runlogToBeDone = [];
@@ -194,8 +255,29 @@ async function getQALeadDashBoard (userID, userName){
                         }
                     }
 
-                    qaLeadDataObj["tescaseToBeDone"] = tescaseToBeDone;
-                    qaLeadDataObj["runlogToBeDone"] = runlogToBeDone;
+                    // qaLeadDataObj["tescaseToBeDoneForQALead"] = tescaseToBeDone;
+                    // qaLeadDataObj["runlogToBeDoneForQALead"] = runlogToBeDone;
+
+                    switch (requiredRoute) {
+                        case "totalProjectForQALead":
+                            qaLeadDataObj["totalProjectForQALead"] = totalProject;
+                            break;
+                        case "testCaseCreatedAndModifiedForQALead":
+                            qaLeadDataObj["testCaseCreatedAndModifiedForQALead"] = testCaseCreatedAndModified;
+                            break;
+                        case "runLogCreatedAndModifiedForQALead":
+                            qaLeadDataObj["runLogCreatedAndModifiedForQALead"] = runLogCreatedAndModified;
+                            break;  
+                        case "tescaseToBeDoneForQALead":
+                            qaLeadDataObj["tescaseToBeDoneForQALead"] = tescaseToBeDone;
+                            break;
+                        case "runlogToBeDoneForQALead":
+                            qaLeadDataObj["runlogToBeDoneForQALead"] = runlogToBeDone;
+                            break;                    
+                        default:
+                            qaLeadDataObj["error"] = "Router your are requesting for is not present!"
+                            break;
+                    }
 
                     resolve(qaLeadDataObj)
         } catch (error) {
@@ -205,7 +287,7 @@ async function getQALeadDashBoard (userID, userName){
     })
 };
 
-async function getTesterDashBoard (userID, userName){
+async function getTesterDashBoard (userID, userName, requiredRoute){
     return new Promise( async (resolve,reject) => {
         try {
             let testerDataObj = {};
@@ -224,7 +306,7 @@ async function getTesterDashBoard (userID, userName){
                 }
             };
 
-            testerDataObj["totalProject"] = totalProject;
+            // testerDataObj["totalProjectForTester"] = totalProject;
             
             let tescaseToBeDone = [];
             let runlogToBeDone = [];
@@ -245,8 +327,23 @@ async function getTesterDashBoard (userID, userName){
                 }
             }
 
-            testerDataObj["tescaseToBeDone"] = tescaseToBeDone;
-            testerDataObj["runlogToBeDone"] = runlogToBeDone;
+            // testerDataObj["tescaseToBeDoneForTester"] = tescaseToBeDone;
+            // testerDataObj["runlogToBeDoneForTester"] = runlogToBeDone;
+
+            switch (requiredRoute) {
+                case "totalProjectForTester":
+                    testerDataObj["totalProjectForTester"] = totalProject;
+                    break;
+                case "recentlyCreatedProjectForAdmin":
+                    testerDataObj["recentlyCreatedProjectForAdmin"] = tescaseToBeDone;
+                    break;
+                case "runlogToBeDoneForTester":
+                    testerDataObj["runlogToBeDoneForTester"] = runlogToBeDone;
+                    break;                         
+                default:
+                    testerDataObj["error"] = "Router your are requesting for is not present!"
+                    break;
+            }
     
             resolve(testerDataObj); 
         } catch (error) {
@@ -260,13 +357,20 @@ async function getDashBoardData (req,res){
     let userName = req.user.payload.user.fName;
     let userID = req.user.payload.userId;
     let userRole = req.user.payload.user.role;
+
+    let route = req.originalUrl;
+    route =route.slice(1);  
+    let index = route.indexOf('/');
+    let lastIndex = route.lastIndexOf('/');
+    let requiredRoute = route.slice(index+1,lastIndex);
+    console.log("test ---- > ", requiredRoute);
    
     try {
         let index = userRole.lastIndexOf(" ")
         let role = userRole.slice(0,index);
         switch (role) {
             case "Admin":
-                    getAdminDashBoard(userID,userName)
+                    getAdminDashBoard(userID,userName, requiredRoute)
                     .then( (adminDataObj) => {
                         res.status(200).json(adminDataObj);
                     }).catch( (err) => {
@@ -275,7 +379,7 @@ async function getDashBoardData (req,res){
                     });  
                 break;
             case "QA Manager":
-                    getQAManagerDashBoard(userID,userName)
+                    getQAManagerDashBoard(userID,userName, requiredRoute)
                     .then( (qaManagerDataObj) => {
                         res.status(200).json(qaManagerDataObj);
                     }).catch( (err) => {
@@ -284,7 +388,7 @@ async function getDashBoardData (req,res){
                     }); 
                 break;
             case "QA Lead":
-                    getQALeadDashBoard(userID,userName)
+                    getQALeadDashBoard(userID,userName, requiredRoute)
                     .then( (qaLeadDataObj) => {
                         res.status(200).json(qaLeadDataObj);
                     }).catch( (err) => {
@@ -293,7 +397,7 @@ async function getDashBoardData (req,res){
                     }); 
                 break;
             case "Tester":
-                    getTesterDashBoard(userID,userName)
+                    getTesterDashBoard(userID,userName, requiredRoute)
                     .then( testerDataObj =>{ 
                         res.status(200).json(testerDataObj)
                     }).catch( (err) => {  
