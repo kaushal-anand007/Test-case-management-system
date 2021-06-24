@@ -22,23 +22,16 @@ router.get('/recentActivitiesForAdmin/', verifyAccessTokenForUserId, DashboardCo
 
 //QA Manager DashBoard Routes.
 
+
 router.get('/collectionOfDataInFormOfCountForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/projectQAMangerIsLeadForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5ProjectForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/memberActivitieForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10ActivitiesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/tescaseAddedOrUpdatedTodayForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10TestCasesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/runlogAddedOrUpdatedTodayForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
-
-router.get('/recentlyAdded5ProjectData/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
-
-router.get('/recentlyModified5Project/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
-
-router.get('/recent10TestCases/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
-
-router.get('/recent10RunLogs/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10RunLogForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
 
 //QA Lead DashBoard Routes.
@@ -46,11 +39,11 @@ router.get('/recent10RunLogs/', verifyAccessTokenForUserId, DashboardController.
 
 router.get('/collectionOfDataInFormOfCountForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded5Project/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5ProjectForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded10TestCases/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10TestCasesForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded10RunLog/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10RunLogForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
 
 //Tester DashBoard Routes.
@@ -58,10 +51,12 @@ router.get('/recentlyAdded10RunLog/', verifyAccessTokenForUserId, DashboardContr
 
 router.get('/collectionOfDataInFormOfCountForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded5Project/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5ProjectForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded10TestCases/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10TestCasesForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recentlyAdded10RunLog/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent10RunLogForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+
+
 
 module.exports =router;
