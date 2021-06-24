@@ -34,6 +34,10 @@ const runLogSchema = new mongoose.Schema({
         type : String
     },
 
+    projectStatus : {
+        type : String
+    },
+
     userID : {
         type : String
     },

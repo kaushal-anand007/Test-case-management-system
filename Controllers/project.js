@@ -165,22 +165,27 @@ async function getProject (req,res) {
      let status;
      try {
          let project = await Project.findOne({"_id" : projectId});
+         let getStatus = project.status;
          let daterightnow = date;
          let startdate = project.startDate;
          let enddate = project.endDate;
-
-        if(daterightnow <= startdate){
-            status = 'created';
-        };
-         
-         if(( startdate <= daterightnow) &&  (daterightnow <= enddate) ){
-             status = 'progress';
-         };
- 
-         if ( daterightnow >= enddate){
-             status = 'pending';
-         };
- 
+        
+        if(getStatus != "complete" && getStatus != "rejected"){
+            if(daterightnow <= startdate){
+                status = 'created';
+            };
+             
+             if(( startdate <= daterightnow) &&  (daterightnow <= enddate) ){
+                 status = 'progress';
+             };
+     
+             if ( daterightnow >= enddate){
+                 status = 'pending';
+             };
+        }else{
+            status = getStatus;
+        } 
+        
          await Project.findOneAndUpdate({"_id" : projectId}, {$set : {"status" : status}});
          let projectById = await Project.find({ "_id" : projectId});
          res.status(200).json(projectById);
@@ -216,14 +221,34 @@ async function updateProject (req,res) {
             setQuery["status"] = status;
         }
 
-        let project = await Project.findOne({ "_id" : projectId })
-        await Project.updateOne(
-            { "_id" : projectId },{$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, $addToSet : { "members":members }}
-        );
+        let project = await Project.findOne({ "_id" : projectId });
+
+        let test1;
+        let test2; 
+        if(members){
+            test1 = await Project.findOneAndUpdate(
+                { "_id" : projectId },{$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date, $addToSet : { "members": members }}
+            );
+        }else{
+            test2 = await Project.findOneAndUpdate(
+                { "_id" : projectId },{$set : setQuery, "modifiedBy" : actedBy, "modifiedOn" : date}
+            );
+        }
+
+        let testCaseData = await TestCase.find({"projectID" : projectId});
+        for(let i=0; i<testCaseData.length; i++){
+            let testCaseId = testCaseData[i]._id;
+            await TestCase.findOneAndUpdate({"_id" : testCaseId}, {"projectStatus" : status});
+        }
+
+        let runLogData = await RunLog.find({"projectId" : projectId});
+        for(let j=0; j<runLogData.length; j++){
+            let runLogId = runLogData[i]._id;
+            await RunLog.findOneAndUpdate({"_id" : runLogId}, {"projectStatus" : status});
+        }
         
         let projectcode = project.projectCode;
 
-        console.log("project --- > ",project);
         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)}); 
         res.status(200).json({ message :"Updated project details"});
     } catch (error) {
@@ -231,7 +256,7 @@ async function updateProject (req,res) {
         res.status(400).json({ message : error});
     }
 
-}
+};
 
 //Function to delete the project.
 async function deleteProject (req,res) {
@@ -305,9 +330,10 @@ async function postTestCase (req,res){
 
     let {title, testDescriptions, scenarioID, relevantData, priority} = req.body;
     let project = await Project.findOne({"_id" : projectId})
-    let projectName = project.nameOfProject
+    let projectName = project.nameOfProject;
+    let projectStatus = project.status;
     let projectcode = project.projectCode;
-    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "projectTitle" :  projectName, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority, "projectCode" : projectcode};
+    let testCaseObj = {testCaseCode, "title" : title, "projectID" : projectId, "projectTitle" :  projectName, "projectStatus" : projectStatus, "userID" : userID, "testDescriptions" : testDescriptions, "scenarioID" : scenarioID, scenario, "createdBy" : actedBy, "createdOn" : date, "role" : role, priority, "projectCode" : projectcode};
     if(title == "" || testDescriptions == ""){
         res.json({ message : "Please fill all the details in test case!!!"});
     }else{
@@ -467,8 +493,9 @@ async function getjsonfromcsv (req,res) {
 
 //Function to get all test cases.
 async function getTestCase (req,res) {
+    let projectId = req.params.projectID
     try {
-        let output = await TestCase.find({$and : [{"projectID" : req.params.projectID}, {"condition" : "Active"}]}).sort({_id : -1});
+        let output = await TestCase.find({$and : [{"projectID" : projectId}, {"condition" : "Active"}]}).sort({_id : -1});
         res.status(200).json(output);
     } catch (error) {
         console.log(error);
@@ -686,6 +713,7 @@ async function postRunLog (req,res) {
         let getTestCase = await TestCase.find({ $and : [{"projectID" : projectId}, {"condition" : "Active"}] });
         let getProject = await Project.findOne({"_id" : projectId});
         let title = getProject.nameOfProject;
+        let projectStatus = getProject.status;
 
         if(remark == "" || status == ""){
             res.json({ message : "Please fill all the fields!!!"});
@@ -722,6 +750,8 @@ async function postRunLog (req,res) {
                 runLogObj["testCasePending"] = countPending;
                 runLogObj["testCaseList"] = getTestCase;
                 runLogObj["projectTitle"] = title;
+                runLogObj["projectStatus"] = projectStatus;
+
                 
                 await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
                 if(flag == true){
@@ -976,7 +1006,7 @@ async function convertJsonToCsv (req,res){
 async function changeProjectCondition (req,res) {
     let date = new Date();
     let { condition, relevantData } = req.body;
-    let projeictd = req.params.projectID;
+    let projectid = req.params.projectID;
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
     let action;
@@ -989,9 +1019,22 @@ async function changeProjectCondition (req,res) {
     }   
 
     try {
-        let projectData = await Project.findOne({"_id" : projeictd});
+        let projectData = await Project.findOne({"_id" : projectid});
         let projectcode = projectData.projectCode;
-        await Project.findOneAndUpdate({ "_id" : projeictd }, {$set : { "condition" : condition}});
+        await Project.findOneAndUpdate({ "_id" : projectid }, {$set : { "condition" : condition}});
+
+        let testCaseData = await TestCase.find({"projectID" : projectid});
+        for(let i=0; i<testCaseData.length; i++){
+            let testCaseId = testCaseData[i]._id;
+            await TestCase.findOneAndUpdate({"_id" : testCaseId}, {"condition" : "Inactive"});
+        };
+
+        let runLogData = await RunLog.find({"projectId" : projectid});
+        for(let j=0; j<runLogData.length; j++){
+            let runLogId = runLogData[j]._id;
+            await RunLog.findOneAndUpdate({"_id" : runLogId}, {"condition" : "Inactive"});
+        }
+
         let actedOn = projectData.nameOfProject;
         await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : projectcode, "data" : relevantData, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action, actedOn)});
         res.status(200).json({message : "Changed project status!"});
@@ -1168,18 +1211,18 @@ async function getCsvOfTestcase (req,res){
 async function getAllTestCases (req,res) {
     try {
         let result = await TestCase.find({"condition" : "Active"}).sort({_id : -1});
-        res.status(200).json(result)
+        res.status(200).json(result);
     } catch (error) {
-        res.status(400).json({ message : "Sorry cannot fing test cases"});
+        res.status(400).json({ message : "Sorry cannot find test cases"});
     }
 }
 
 async function getAllRunLogs (req,res) {
     try {
         let result = await RunLog.find({"condition" : "Active"}).sort({_id : -1});
-        res.status(200).json(result)
+        res.status(200).json(result);
     } catch (error) {
-        res.status(400).json({ message : "Sorry cannot fing runlogs"});
+        res.status(400).json({ message : "Sorry cannot find runlogs"});
     }
 }
 
