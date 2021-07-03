@@ -9,6 +9,7 @@ const moment = require('moment');
 const date = new Date();
 let getThisMonth = date.getMonth();
 let getDay = date.getDay();
+var ObjectId = require('mongodb').ObjectId;
 
 async function getAdminDashBoard(userID, userName, requiredRoute){
         return new Promise(async (resolve,reject) => {
@@ -169,14 +170,30 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
             for(let i=0; i<projectData.length; i++){
                 let projectMembersData = projectData[i].members;
                 for(let j=0; j<projectMembersData.length; j++){
+                    console.log("projectMembersData --- > ", projectMembersData[j]);
                     let membersId = projectMembersData[j]._id;
+                    let membersName = projectMembersData[j].fName
+
+                    let test = membersId;
+
+                    console.log("test --- > ",typeof test);
+
+                    console.log("membersId --- > ", membersId);
 
                     let getLog = await Logs.find({"UserID" : membersId}).sort({_id : -1});
                     for(let b=0; b<getLog.length; b++){
                         recentActivities.push(getLog[b]); 
                     }
+
+                    //console.log("recentActivities --- > ", recentActivities);
                     
-                    let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"_id" : membersId}]}).sort({_id : -1});
+                    let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"userID" : membersId}]}, (err) => {
+                        if(err){
+                            console.log(err);
+                        }
+                    }).sort({_id : -1});
+
+                    console.log("totalTestCaseUnderHim --- > ", totalTestCaseUnderHim);
                     for(let a=0; a<totalTestCaseUnderHim.length; a++){
                         allTestCases.push(totalTestCaseUnderHim[a]);
                         let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
@@ -268,17 +285,19 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
                         totaltestCases++;
                     }
 
-                    let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : membersId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                    console.log("totaltestCases --- > ", totaltestCases);
+
+                    let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : membersId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                     for(let q=0; q<testCaseLastWeekResult.length; q++){
                         testCaseWeeklyCount++;
                     };
 
-                    let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : membersId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                    let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : membersId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                     for(let s=0; s<runLogLastWeekResult.length; s++){
                         runLogWeeklyCount++;
                     };
 
-                    let getRunLog = await RunLog.find({$and : [{"_id" : membersId}, {"condition" : "Active"}]}).sort({_id : -1});
+                    let getRunLog = await RunLog.find({$and : [{"userID" : membersId}, {"condition" : "Active"}]}).sort({_id : -1});
 
                     for(let r=0; r<getRunLog.length; r++){
                         allRunLog.push(getRunLog[r]);
@@ -418,16 +437,16 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
                     qaManagerDataObj["arrayOfTestCasesOnDailyBasis"] = arrayOfTestCasesOnDailyBasis;
                     qaManagerDataObj["arrayOfRunlogOnDailyBasis"] = arrayOfRunlogOnDailyBasis;
                     break;
-                case "recent5Project":
+                case "recent5ProjectForQAManager":
                     qaManagerDataObj["recent5ProjectForQAManager"] = recent5Project;
                     break;
-                case "recent10Activities":
+                case "recent10ActivitiesForQAManager":
                     qaManagerDataObj["recent10ActivitiesForQAManager"] = recent10Activities;
                     break;
-                case "recent10TestCases":
+                case "recent10TestCasesForQAManager":
                     qaManagerDataObj["recent10TestCasesForQAManager"] = recent10TestCases;
                     break;  
-                case "recent10RunLog":
+                case "recent10RunLogForQAManager":
                     qaManagerDataObj["recent10RunLogForQAManager"] = recent10RunLog;
                     break;                                           
                 default:
@@ -538,17 +557,17 @@ async function getQALeadDashBoard (userID, userName, requiredRoute){
                     totaltestCases++;
                 }
 
-                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                 for(let q=0; q<testCaseLastWeekResult.length; q++){
                     testCaseWeeklyCount++;
                 };
 
-                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                 for(let s=0; s<runLogLastWeekResult.length; s++){
                     runLogWeeklyCount++;
                 };
 
-                let getRunLog = await RunLog.find({$and : [{"_id" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
+                let getRunLog = await RunLog.find({$and : [{"userID" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
 
                 for(let r=0; r<getRunLog.length; r++){
                     allRunLog.push(getRunLog[r]);
@@ -596,13 +615,13 @@ async function getQALeadDashBoard (userID, userName, requiredRoute){
                             qaLeadDataObj["runLogRemaining"] = runLogRemaining;
                             qaLeadDataObj["runLogWeeklyCount"] = runLogWeeklyCount;
                             break;
-                        case "recent5Project":
+                        case "recent5ProjectForQALead":
                             qaLeadDataObj["recent5ProjectForQALead"] = recent5Project;;
                             break;
-                        case "recent10TestCases":
+                        case "recent10TestCasesForQALead":
                             qaLeadDataObj["recent10TestCasesForQALead"] = recent10TestCases;
                             break;  
-                        case "recent10RunLog":
+                        case "recent10RunLogForQALead":
                             qaLeadDataObj["recent10RunLogForQALead"] = recent10RunLog;
                             break;                   
                         default:
@@ -687,7 +706,7 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
                 recent5Project.push(allProject[a]);
             }
                     
-            let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"_id" : userID}]}).sort({_id : -1});
+            let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"userID" : userID}]}).sort({_id : -1});
             for(let a=0; a<totalTestCaseUnderHim.length; a++){
                 allTestCases.push(totalTestCaseUnderHim[a]);
                 let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
@@ -713,17 +732,17 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
                     totaltestCases++;
                 }
 
-                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                 for(let q=0; q<testCaseLastWeekResult.length; q++){
                     testCaseWeeklyCount++;
                 };
 
-                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"_id" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
                 for(let s=0; s<runLogLastWeekResult.length; s++){
                     runLogWeeklyCount++;
                 };
 
-                let getRunLog = await RunLog.find({$and : [{"_id" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
+                let getRunLog = await RunLog.find({$and : [{"userID" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
 
                 for(let r=0; r<getRunLog.length; r++){
                     allRunLog.push(getRunLog[r]);
@@ -772,13 +791,13 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
                     testerDataObj["runLogRemaining"] = runLogRemaining;
                     testerDataObj["runLogWeeklyCount"] = runLogWeeklyCount;
                     break;
-                case "recent5Project":
+                case "recent5ProjectForTester":
                     testerDataObj["recent5ProjectForTester"] = recent5Project;
                     break;
-                case "recent10TestCases":
+                case "recent10TestCasesForTester":
                     testerDataObj["recent10TestCasesForTester"] = recent10TestCases;
                     break; 
-                case "recent10RunLog":
+                case "recent10RunLogForTester":
                     testerDataObj["recent10RunLogForTester"] = recent10RunLog;
                     break;                              
                 default:
