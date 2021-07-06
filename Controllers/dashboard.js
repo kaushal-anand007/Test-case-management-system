@@ -35,7 +35,7 @@ async function getAdminDashBoard(userID, userName, requiredRoute){
                     }
                 }
 
-                let recentlyCreatedProject = await Project.find({"condition" : "Active"}).sort({_id : -1}).limit(10);
+                let recentlyCreatedProject = await Project.find({"condition" : "Active"}).sort({_id : -1}).limit(5);
                 
                 let projectCrossedDeadLineData = await Project.find({$and : [{"condition" : "Active"}, {"status" : "pending"}]});
                 
@@ -45,7 +45,7 @@ async function getAdminDashBoard(userID, userName, requiredRoute){
         
                 let projectReject = await Project.find({$and : [{"condition" : "Active"}, {"status" : "rejected"}]});
         
-                let recentActivities = await Logs.find({}).sort({_id : -1}).limit(10);
+                let recentActivities = await Logs.find({}).sort({_id : -1}).limit(5);
 
                 switch (requiredRoute) {
                     case "collectionOfDataInFormOfCountForAdmin":
@@ -92,7 +92,7 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
             let projectAssignThisMonth = 0;
             let recent5Project = [];
             let recentActivities = [];
-            let recent10Activities = [];
+            let recent5Activities = [];
             let totaltestCases = 0;
             let allTestCases = [];
             let testCaseLowPriority = 0;
@@ -100,14 +100,14 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
             let testCaseHighPriority = 0;
             let testCaseWeeklyCount = 0;
             let arrayOfTestCasesOnDailyBasis = [];
-            let recent10TestCases = [];
+            let recent5TestCases = [];
             let totalRunLog = 0;
             let allRunLog = [];
             let runLogCompleted = 0;
             let runLogRemaining = 0;
             let runLogWeeklyCount = 0;
             let arrayOfRunlogOnDailyBasis = [];
-            let recent10RunLog = [];
+            let recent5RunLog = [];
 
             let sundayTestCaseCount = 0;
             let mondayTestCaseCount = 0;
@@ -129,9 +129,9 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
 
             let projectData = await Project.find({$and : [{"handledBy._id" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
             
-            let projectCreatedByQAManager = await Project.find({$and : [{"condition" : "Active"}, {"createdBy" : userName}]});
+            //let projectCreatedByQAManager = await Project.find({$and : [{"condition" : "Active"}, {"createdBy" : userName}]});
     
-            let projectQAMangerIsLead = await Project.find({$and : [{"condition" : "Active"}, {"handledBy._id" : userID}]});
+            let projectQAMangerIsLead = await Project.find({$and : [{"condition" : "Active"}, {"handledBy._id" : userID}]}).count();
             
             for(let k=0; k<projectData.length; k++){
                 let status = projectData[k].status;
@@ -163,7 +163,12 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
             }
 
             for(let a=0; a<5; a++){
-                recent5Project.push(projectData[a]);
+                if(projectData[a] == null){
+                    continue;
+                }else{
+                    recent5Project.push(projectData[a]);
+                }
+                
             }
 
 
@@ -389,8 +394,13 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
                 }
             };
 
-            for(let c=0; c<10; c++){
-                recent10Activities.push(recentActivities[c]);
+            for(let c=0; c<5; c++){
+                if(recentActivities[c] == null){
+                    continue;
+                }else{
+                    recent5Activities.push(recentActivities[c]);
+                }
+              
             }
 
             arrayOfTestCasesOnDailyBasis.push({"sundayTestCaseCount" : sundayTestCaseCount});
@@ -409,17 +419,26 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
             arrayOfRunlogOnDailyBasis.push({"fridayRunLogCount" : fridayRunLogCount});
             arrayOfRunlogOnDailyBasis.push({"saturdayRunLogCount" : saturdayRunLogCount});
 
-            for(let e=0; e<10; e++){
-                recent10TestCases.push(allTestCases[e]);
+            for(let e=0; e<5; e++){
+                if(allTestCases[e] == null){
+                    continue;
+                }else{
+                    recent5TestCases.push(allTestCases[e]);
+                }
             }
 
-            for(let f=0; f<10; f++){
-                recent10RunLog.push(allRunLog[f]);
+            for(let f=0; f<5; f++){
+                if(allRunLog[f] == null){
+                    continue;
+                }else{
+                    recent5RunLog.push(allRunLog[f]);
+                };
             }
 
             switch (requiredRoute) {
                 case "collectionOfDataInFormOfCountForQAManager":
-                    qaManagerDataObj["projectCreatedByQAManager"] = projectCreatedByQAManager.length;
+                   // qaManagerDataObj["projectCreatedByQAManager"] = projectCreatedByQAManager.length;
+                    qaManagerDataObj["projectQAMangerIsLead"] = projectQAMangerIsLead;
                     qaManagerDataObj["projectCompleted"] = projectCompleted;
                     qaManagerDataObj["projectRejected"] = projectRejected;
                     qaManagerDataObj["projectOnGoing"] = projectOnGoing;
@@ -440,14 +459,14 @@ async function getQAManagerDashBoard(userID, userName, requiredRoute){
                 case "recent5ProjectForQAManager":
                     qaManagerDataObj["recent5ProjectForQAManager"] = recent5Project;
                     break;
-                case "recent10ActivitiesForQAManager":
-                    qaManagerDataObj["recent10ActivitiesForQAManager"] = recent10Activities;
+                case "recent5ActivitiesForQAManager":
+                    qaManagerDataObj["recent5ActivitiesForQAManager"] = recent5Activities;
                     break;
-                case "recent10TestCasesForQAManager":
-                    qaManagerDataObj["recent10TestCasesForQAManager"] = recent10TestCases;
+                case "recent5TestCasesForQAManager":
+                    qaManagerDataObj["recent5TestCasesForQAManager"] = recent5TestCases;
                     break;  
-                case "recent10RunLogForQAManager":
-                    qaManagerDataObj["recent10RunLogForQAManager"] = recent10RunLog;
+                case "recent5RunLogForQAManager":
+                    qaManagerDataObj["recent5RunLogForQAManager"] = recent5RunLog;
                     break;                                           
                 default:
                     qaManagerDataObj["error"] = "Router your are requesting for is not present!"
@@ -480,13 +499,13 @@ async function getQALeadDashBoard (userID, userName, requiredRoute){
             let testCaseMediumPriority = 0;
             let testCaseHighPriority = 0;
             let testCaseWeeklyCount = 0;
-            let recent10TestCases = [];
+            let recent5TestCases = [];
             let totalRunLog = 0;
             let allRunLog = [];
             let runLogCompleted = 0;
             let runLogRemaining = 0;
             let runLogWeeklyCount = 0;
-            let recent10RunLog = [];
+            let recent5RunLog = [];
 
 
             let projectData = await Project.find({"condition" : "Active"}).sort({_id : -1});
@@ -528,74 +547,93 @@ async function getQALeadDashBoard (userID, userName, requiredRoute){
             
 
             for(let a=0; a<5; a++){
-                recent5Project.push(allProject[a]);
+                if(allProject[a] == null){
+                    continue;
+                }else{
+                    recent5Project.push(allProject[a]);
+                }
+            };
+
+            for(let x=0 ; x<projectData.length; x++){
+                let membersOfProject =  projectData[x].members;
+                let projectId = projectData[x]._id;
+                for(let j=0; j<membersOfProject.length; j++){
+                    let memberId = membersOfProject[j]._id;
+                    if(memberId == userID){
+                        let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"projectID" : projectId}]}).sort({_id : -1});
+                        for(let a=0; a<totalTestCaseUnderHim.length; a++){
+                            allTestCases.push(totalTestCaseUnderHim[a]);
+                            let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
+                            let getTestCaseMonth = getTestCaseDate.getMonth();
+                            let getPriority = totalTestCaseUnderHim[a].priority;
+            
+                            if(getTestCaseMonth == getThisMonth){
+                                testCaseWeeklyCount++;
+                            }
+            
+                            if(getPriority == "low"){
+                                testCaseLowPriority++;
+                            }
+            
+                            if(getPriority == "medium"){
+                                testCaseMediumPriority++;
+                            }
+            
+                            if(getPriority == "high"){
+                                testCaseHighPriority++;
+                            }
+            
+                                totaltestCases++;
+                            }
+            
+                            let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"projectID" : projectId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                            for(let q=0; q<testCaseLastWeekResult.length; q++){
+                                testCaseWeeklyCount++;
+                            };
+            
+                            let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"projectId" : projectId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                            for(let s=0; s<runLogLastWeekResult.length; s++){
+                                runLogWeeklyCount++;
+                            };
+            
+                            let getRunLog = await RunLog.find({$and : [{"projectId" : projectId}, {"condition" : "Active"}]}).sort({_id : -1});
+            
+                            for(let r=0; r<getRunLog.length; r++){
+                                allRunLog.push(getRunLog[r]);
+                                let runlogStatus = getRunLog[r].status;
+                                let getRunLogDate = getRunLog[r].createdOn;
+                                let getRunLogMonth = getRunLogDate.getMonth();
+            
+                                if(getRunLogMonth == getThisMonth){
+                                    runLogWeeklyCount++;
+                                }
+            
+                                totalRunLog++;
+            
+                                if(runlogStatus == "completed"){
+                                    runLogCompleted++;
+                                }
+            
+                                if(runlogStatus == "created" || runlogStatus == "started" || runlogStatus == "pending"){
+                                    runLogRemaining++;
+                                } 
+                            }
+                    }
+                }
             }
                     
-            let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"_id" : userID}]}).sort({_id : -1});
-            for(let a=0; a<totalTestCaseUnderHim.length; a++){
-                allTestCases.push(totalTestCaseUnderHim[a]);
-                let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
-                let getTestCaseMonth = getTestCaseDate.getMonth();
-                let getPriority = totalTestCaseUnderHim[a].priority;
-
-                if(getTestCaseMonth == getThisMonth){
-                    testCaseWeeklyCount++;
+            for(let e=0; e<5; e++){
+                if(allTestCases[e] == null){
+                    continue;
                 }
-
-                if(getPriority == "low"){
-                    testCaseLowPriority++;
-                }
-
-                if(getPriority == "medium"){
-                    testCaseMediumPriority++;
-                }
-
-                if(getPriority == "high"){
-                    testCaseHighPriority++;
-                }
-
-                    totaltestCases++;
-                }
-
-                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
-                for(let q=0; q<testCaseLastWeekResult.length; q++){
-                    testCaseWeeklyCount++;
-                };
-
-                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
-                for(let s=0; s<runLogLastWeekResult.length; s++){
-                    runLogWeeklyCount++;
-                };
-
-                let getRunLog = await RunLog.find({$and : [{"userID" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
-
-                for(let r=0; r<getRunLog.length; r++){
-                    allRunLog.push(getRunLog[r]);
-                    let runlogStatus = getRunLog[r].status;
-                    let getRunLogDate = getRunLog[r].createdOn;
-                    let getRunLogMonth = getRunLogDate.getMonth();
-
-                    if(getRunLogMonth == getThisMonth){
-                        runLogWeeklyCount++;
-                    }
-
-                    totalRunLog++;
-
-                    if(runlogStatus == "completed"){
-                        runLogCompleted++;
-                    }
-
-                    if(runlogStatus == "created" || runlogStatus == "started" || runlogStatus == "pending"){
-                        runLogRemaining++;
-                    } 
-                }
-
-            for(let e=0; e<10; e++){
-                recent10TestCases.push(allTestCases[e]);
+                recent5TestCases.push(allTestCases[e]);
             }
 
-            for(let f=0; f<10; f++){
-                recent10RunLog.push(allRunLog[f]);
+            for(let f=0; f<5; f++){
+                if(allRunLog[f] == null){
+                    continue;
+                }
+                recent5RunLog.push(allRunLog[f]);
                 }
                     switch (requiredRoute) {
                         case "collectionOfDataInFormOfCountForQALead":
@@ -618,14 +656,14 @@ async function getQALeadDashBoard (userID, userName, requiredRoute){
                         case "recent5ProjectForQALead":
                             qaLeadDataObj["recent5ProjectForQALead"] = recent5Project;;
                             break;
-                        case "recent10TestCasesForQALead":
-                            qaLeadDataObj["recent10TestCasesForQALead"] = recent10TestCases;
+                        case "recent5TestCasesForQALead":
+                            qaLeadDataObj["recent5TestCasesForQALead"] = recent5TestCases;
                             break;  
-                        case "recent10RunLogForQALead":
-                            qaLeadDataObj["recent10RunLogForQALead"] = recent10RunLog;
+                        case "recent5RunLogForQALead":
+                            qaLeadDataObj["recent5RunLogForQALead"] = recent5RunLog;
                             break;                   
                         default:
-                            qaLeadDataObj["error"] = "Router your are requesting for is not present!"
+                            qaLeadDataObj["error"] = "Router you are requesting for is not present!"
                             break;
                     }
 
@@ -655,13 +693,13 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
             let testCaseMediumPriority = 0;
             let testCaseHighPriority = 0;
             let testCaseWeeklyCount = 0;
-            let recent10TestCases = [];
+            let recent5TestCases = [];
             let totalRunLog = 0;
             let allRunLog = [];
             let runLogCompleted = 0;
             let runLogRemaining = 0;
             let runLogWeeklyCount = 0;
-            let recent10RunLog = [];
+            let recent5RunLog = [];
 
 
             let projectData = await Project.find({"condition" : "Active"}).sort({_id : -1});
@@ -703,75 +741,102 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
             
 
             for(let a=0; a<5; a++){
-                recent5Project.push(allProject[a]);
-            }
-                    
-            let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"userID" : userID}]}).sort({_id : -1});
-            for(let a=0; a<totalTestCaseUnderHim.length; a++){
-                allTestCases.push(totalTestCaseUnderHim[a]);
-                let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
-                let getTestCaseMonth = getTestCaseDate.getMonth();
-                let getPriority = totalTestCaseUnderHim[a].priority;
-
-                if(getTestCaseMonth == getThisMonth){
-                    testCaseWeeklyCount++;
+                if(allProject[a] == null){
+                    continue;
+                }else{
+                    recent5Project.push(allProject[a]);
                 }
-
-                if(getPriority == "low"){
-                    testCaseLowPriority++;
-                }
-
-                if(getPriority == "medium"){
-                    testCaseMediumPriority++;
-                }
-
-                if(getPriority == "high"){
-                    testCaseHighPriority++;
-                }
-
-                    totaltestCases++;
-                }
-
-                let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
-                for(let q=0; q<testCaseLastWeekResult.length; q++){
-                    testCaseWeeklyCount++;
-                };
-
-                let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"userID" : userID}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
-                for(let s=0; s<runLogLastWeekResult.length; s++){
-                    runLogWeeklyCount++;
-                };
-
-                let getRunLog = await RunLog.find({$and : [{"userID" : userID}, {"condition" : "Active"}]}).sort({_id : -1});
-
-                for(let r=0; r<getRunLog.length; r++){
-                    allRunLog.push(getRunLog[r]);
-                    let runlogStatus = getRunLog[r].status;
-                    let getRunLogDate = getRunLog[r].createdOn;
-                    let getRunLogMonth = getRunLogDate.getMonth();
-
-                    if(getRunLogMonth == getThisMonth){
-                        runLogWeeklyCount++;
-                    }
-
-                    totalRunLog++;
-
-                    if(runlogStatus == "completed"){
-                        runLogCompleted++;
-                    }
-
-                    if(runlogStatus == "created" || runlogStatus == "started" || runlogStatus == "pending"){
-                        runLogRemaining++;
-                    } 
-                }
-
-            for(let e=0; e<10; e++){
-                recent10TestCases.push(allTestCases[e]);
+                
             }
 
-            for(let f=0; f<10; f++){
-                recent10RunLog.push(allRunLog[f]);
+            for(let x=0 ; x<projectData.length; x++){
+                let membersOfProject =  projectData[x].members;
+                let projectId = projectData[x]._id;
+                console.log("projectId --- > ", projectId);
+                for(let j=0; j<membersOfProject.length; j++){
+                    let memberId = membersOfProject[j]._id;
+                    console.log("memberId --- > ", memberId);
+                    if(memberId == userID){
+                        let totalTestCaseUnderHim = await TestCases.find({$and : [{"condition" : "Active"}, {"projectID" : projectId}]}).sort({_id : -1});
+                        for(let a=0; a<totalTestCaseUnderHim.length; a++){
+                            allTestCases.push(totalTestCaseUnderHim[a]);
+                            let getTestCaseDate = totalTestCaseUnderHim[a].createdOn;
+                            let getTestCaseMonth = getTestCaseDate.getMonth();
+                            let getPriority = totalTestCaseUnderHim[a].priority;
+            
+                            if(getTestCaseMonth == getThisMonth){
+                                testCaseWeeklyCount++;
+                            }
+            
+                            if(getPriority == "low"){
+                                testCaseLowPriority++;
+                            }
+            
+                            if(getPriority == "medium"){
+                                testCaseMediumPriority++;
+                            }
+            
+                            if(getPriority == "high"){
+                                testCaseHighPriority++;
+                            }
+            
+                                totaltestCases++;
+                            }
+            
+                            let testCaseLastWeekResult = await TestCases.find({$and : [{"condition" : "Active"}, {$and : [{"projectID" : projectId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                            for(let q=0; q<testCaseLastWeekResult.length; q++){
+                                testCaseWeeklyCount++;
+                            };
+            
+                            let runLogLastWeekResult = await RunLog.find({$and : [{"condition" : "Active"}, {$and : [{"projectId" : projectId}, {"createdOn" : {$gte : new Date(new Date - (7 * 60 * 60 * 24 * 1000))}}]}]});
+                            for(let s=0; s<runLogLastWeekResult.length; s++){
+                                runLogWeeklyCount++;
+                            };
+            
+                            let getRunLog = await RunLog.find({$and : [{"projectId" : projectId}, {"condition" : "Active"}]}).sort({_id : -1});
+            
+                            for(let r=0; r<getRunLog.length; r++){
+                                allRunLog.push(getRunLog[r]);
+                                let runlogStatus = getRunLog[r].status;
+                                let getRunLogDate = getRunLog[r].createdOn;
+                                let getRunLogMonth = getRunLogDate.getMonth();
+            
+                                if(getRunLogMonth == getThisMonth){
+                                    runLogWeeklyCount++;
+                                }
+            
+                                totalRunLog++;
+            
+                                if(runlogStatus == "completed"){
+                                    runLogCompleted++;
+                                }
+            
+                                if(runlogStatus == "created" || runlogStatus == "started" || runlogStatus == "pending"){
+                                    runLogRemaining++;
+                                } 
+                            }
+
+                    }
+
+                }        
+
+            }            
+
+            for(let e=0; e<5; e++){
+                if(allTestCases[e] == null){
+                    continue;
+                }else{
+                    recent5TestCases.push(allTestCases[e]);
                 }
+            }
+
+            for(let f=0; f<5; f++){
+                if(allRunLog[f] == null){
+                    continue;
+                }else{
+                    recent5RunLog.push(allRunLog[f]);
+                }  
+            }
 
             switch (requiredRoute) {
                 case "collectionOfDataInFormOfCountForTester":
@@ -794,11 +859,11 @@ async function getTesterDashBoard (userID, userName, requiredRoute){
                 case "recent5ProjectForTester":
                     testerDataObj["recent5ProjectForTester"] = recent5Project;
                     break;
-                case "recent10TestCasesForTester":
-                    testerDataObj["recent10TestCasesForTester"] = recent10TestCases;
+                case "recent5TestCasesForTester":
+                    testerDataObj["recent5TestCasesForTester"] = recent5TestCases;
                     break; 
-                case "recent10RunLogForTester":
-                    testerDataObj["recent10RunLogForTester"] = recent10RunLog;
+                case "recent5RunLogForTester":
+                    testerDataObj["recent5RunLogForTester"] = recent5RunLog;
                     break;                              
                 default:
                     testerDataObj["error"] = "Router your are requesting for is not present!"

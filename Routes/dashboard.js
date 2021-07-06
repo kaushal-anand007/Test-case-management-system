@@ -27,11 +27,11 @@ router.get('/collectionOfDataInFormOfCountForQAManager/', verifyAccessTokenForUs
 
 router.get('/recent5ProjectForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10ActivitiesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5ActivitiesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10TestCasesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5TestCasesForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10RunLogForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5RunLogForQAManager/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
 
 //QA Lead DashBoard Routes.
@@ -41,9 +41,9 @@ router.get('/collectionOfDataInFormOfCountForQALead/', verifyAccessTokenForUserI
 
 router.get('/recent5ProjectForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10TestCasesForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5TestCasesForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10RunLogForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5RunLogForQALead/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
 
 //Tester DashBoard Routes.
@@ -53,9 +53,9 @@ router.get('/collectionOfDataInFormOfCountForTester/', verifyAccessTokenForUserI
 
 router.get('/recent5ProjectForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10TestCasesForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5TestCasesForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
-router.get('/recent10RunLogForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
+router.get('/recent5RunLogForTester/', verifyAccessTokenForUserId, DashboardController.getDashBoardData);
 
 
 
