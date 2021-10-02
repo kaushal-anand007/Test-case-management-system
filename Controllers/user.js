@@ -107,6 +107,8 @@ async function registerUser (req,res) {
                     let otp = "";
 
                     getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
+                    html = "getCredentials"
+                    getMailThroughNodeMailer(fName, email, confirmationCode  = user.confirmationCode, html, filename, path, otp, password);
                     let actedBy = req.user.payload.user.fName;
                     let actedOn = fName;
                     let userID = req.user.payload.userId;
