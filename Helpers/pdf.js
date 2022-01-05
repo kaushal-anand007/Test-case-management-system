@@ -8,7 +8,7 @@ const { getMailThroughNodeMailer } = require('../Helpers/nodeMailer');
 const Project = require('../Models/project');
 
 //Converting ejs to pdf.
-function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
+function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode, email) {
         return new Promise(async ( resolve, reject )=>{
             try {
                 let Path = path.resolve(`./views/pages/${filename}.ejs`);
@@ -21,7 +21,6 @@ function convertHtmlToPdf(Data, filename, pdfFileName, html, runcode) {
 
                 //Sending pdf as mail.
                 let fName ="";
-                let email = "";
                 let confirmationCode = "";
                 let filenames= `${pdfFileName}.pdf`;
                 let paths = `./PDFs/${pdfFileName}.pdf`;

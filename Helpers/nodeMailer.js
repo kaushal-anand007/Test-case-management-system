@@ -26,7 +26,7 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
 
     let mailOptions = {
         from: process.env.EMAIL,
-        to: 'kaushal.anand@storeking.in',
+        to: email
     };
 
     if(html == 'allowed'){
@@ -394,7 +394,7 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
       mailOptions['html'] =  `<div>
                                    <h2>Hello ${fName} </h2>
                                    <p>
-                                   <p>Your credentials are email is <b>${email}</b> and password is <b>${password}.</b> Please confirm the mail before using it.</p>
+                                   <p>Your login credential is email - <b>${email}</b> and password - <b>${password}.</b> Please confirm the mail before using the app.</p>
                                </div>`
   }
 

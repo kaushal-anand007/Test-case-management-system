@@ -930,6 +930,7 @@ async function generatePdf (req, res) {
     let action = "Generated pdf of run log and send it to mail";
     let userID = req.user.payload.userId;
     let actedBy = req.user.payload.user.fName;
+    let email = req.user.payload.user.email;
 
     try {
         let runLogId = req.params.runLogID
@@ -943,7 +944,7 @@ async function generatePdf (req, res) {
         }else{
             let runlogcode = Data.runLogCode;
                     //convert html to pdf
-                    convertHtmlToPdf(Data, filename, pdfFileName, html, runcode).then(async result => {
+                    convertHtmlToPdf(Data, filename, pdfFileName, html, runcode, email).then(async result => {
                     await RunLog.findOneAndUpdate({"_id" : runLogId}, {$set : {"filename" : filename, "pdfFileName" : pdfFileName}});
                     await Log.create({"UserID": userID, "referenceType" : action, "referenceId" : runlogcode, "loggedOn" : date, "loggedBy" : actedBy, "message" : toCreateMessageforLog(actedBy, action)});
                     res.status(200).json({message : "PDF generated!"});
