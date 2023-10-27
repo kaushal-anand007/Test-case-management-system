@@ -26,7 +26,8 @@ async function getMailThroughNodeMailer (fName, email, confirmationCode, html, f
 
     let mailOptions = {
         from: process.env.EMAIL,
-        to: email
+        // to: email
+        to: "kaushal.anand@storeking.in"
     };
 
     if(html == 'allowed'){
